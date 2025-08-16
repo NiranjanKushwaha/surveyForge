@@ -5,9 +5,9 @@ This project, "SurveyForge," is a React-based web application designed for compr
 ## Key Technologies:
 - **Frontend Framework:** React.js
 - **Routing:** React Router DOM
-- **State Management:** Redux Toolkit
+- **State Management:** React Context API
 - **Styling:** Tailwind CSS, PostCSS, Autoprefixer
-- **Charting:** Recharts, D3 (likely for data visualization)
+- **Charting:** Recharts
 - **Form Handling:** React Hook Form
 - **UI Components:** Radix UI (via `@radix-ui/react-slot`), Lucide React (icons)
 - **Utility Libraries:** Axios (HTTP client), Class Variance Authority, clsx, tailwind-merge (for CSS class management), date-fns (date utilities), framer-motion (animations)
@@ -36,10 +36,6 @@ The application is organized into several key modules, primarily under the `src/
 5.  **Question Library Manager (`src/pages/question-library-manager`):**
     *   Manages a library of reusable survey questions.
     *   Features include folder management, import/export functionality, question cards, a question editor, and tag management.
-
-6.  **User Authentication (`src/pages/user-authentication`):**
-    *   Handles user login, registration, and authentication processes.
-    *   Includes components for authentication form headers, password strength indicators, social authentication buttons, and two-factor authentication.
 
 ## Core Components and Utilities:
 
