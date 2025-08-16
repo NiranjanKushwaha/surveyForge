@@ -101,6 +101,378 @@
     transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   
+  /* Drag and Drop Styles */
+  .drag-over {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary/5);
+    transform: scale(1.02);
+  }
+  
+  .dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+    z-index: 50;
+  }
+  
+  .drop-indicator {
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-primary/50));
+    border-radius: 2px;
+    margin: 8px 0;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
+  /* Professional Drag and Drop Styles */
+  .question-dragging {
+    cursor: grabbing !important;
+  }
+  
+  .question-dragging * {
+    pointer-events: none;
+  }
+  
+  .question-dragging .question-content {
+    transform: rotate(2deg) scale(0.95);
+    transition: all 0.2s ease;
+  }
+  
+  /* Beautiful Drop Indicators */
+  .drop-indicator {
+    height: 6px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+    border-radius: 3px;
+    margin: 12px 0;
+    animation: dropPulse 2s infinite;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+  
+  @keyframes dropPulse {
+    0%, 100% { 
+      opacity: 1; 
+      transform: scaleX(1);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    50% { 
+      opacity: 0.7; 
+      transform: scaleX(1.1);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+    }
+  }
+  
+  /* Enhanced Drag Over Effects */
+  .drag-over {
+    border-color: #3b82f6 !important;
+    background-color: rgba(59, 130, 246, 0.05) !important;
+    transform: scale(1.01) !important;
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15) !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .dragging {
+    opacity: 0.6 !important;
+    transform: rotate(2deg) scale(0.95) !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+    z-index: 1000 !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  /* Smooth Hover Effects */
+  .question-card {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .question-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Drag Handle Animations */
+  .drag-handle {
+    transition: all 0.2s ease;
+  }
+  
+  .drag-handle:hover {
+    transform: scale(1.1);
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  
+  .drag-handle:active {
+    transform: scale(0.95);
+    cursor: grabbing;
+  }
+  
+  /* Beautiful Scroll Indicators */
+  .scroll-indicator-top,
+  .scroll-indicator-bottom {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    z-index: 1000;
+    animation: scrollBounce 1.5s infinite;
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+    border: 3px solid white;
+    backdrop-filter: blur(10px);
+  }
+  
+  .scroll-indicator-top {
+    top: 30px;
+  }
+  
+  .scroll-indicator-bottom {
+    bottom: 30px;
+  }
+  
+  @keyframes scrollBounce {
+    0%, 100% { 
+      transform: translateX(-50%) translateY(0) scale(1);
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+    }
+    25% { 
+      transform: translateX(-50%) translateY(-15px) scale(1.05);
+      box-shadow: 0 15px 35px rgba(59, 130, 246, 0.6);
+    }
+    50% { 
+      transform: translateX(-50%) translateY(-8px) scale(1.02);
+      box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5);
+    }
+    75% { 
+      transform: translateX(-50%) translateY(-12px) scale(1.03);
+      box-shadow: 0 13px 32px rgba(59, 130, 246, 0.55);
+    }
+  }
+  
+  /* Enhanced Drag Scroll Zones */
+  .drag-scroll-zone {
+    position: relative;
+  }
+  
+  .drag-scroll-zone::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, 
+      rgba(59, 130, 246, 0.2) 0%, 
+      transparent 100%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  .drag-scroll-zone::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to top, 
+      rgba(59, 130, 246, 0.2) 0%, 
+      transparent 100%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+    border-radius: 0 0 8px 8px;
+  }
+  
+  .drag-scroll-zone.active::before,
+  .drag-scroll-zone.active::after {
+    opacity: 1;
+  }
+  
+  /* Question Card Animations */
+  .question-card-enter {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  
+  .question-card-enter-active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .question-card-exit {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  
+  .question-card-exit-active {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Beautiful Button Hover Effects */
+  .action-button {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .action-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .action-button:active {
+    transform: scale(0.95);
+  }
+  
+  /* Enhanced Form Layout */
+  .form-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+  
+  .form-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+  
+  /* JSON Editor Enhancements */
+  .json-editor-split {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 0;
+    height: 100%;
+  }
+  
+  .json-editor-main {
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .json-editor-sidebar {
+    background-color: var(--color-muted);
+    overflow-y: auto;
+    padding: 1rem;
+  }
+  
+  .json-validation-error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .json-validation-warning {
+    background-color: #fffbeb;
+    border: 1px solid #fed7aa;
+    color: #d97706;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .json-schema-doc {
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .json-schema-doc h4 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .json-schema-doc ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .json-schema-doc li {
+    margin-bottom: 0.25rem;
+    padding-left: 0.5rem;
+  }
+  
+  .json-schema-doc code {
+    background-color: rgba(255, 255, 255, 0.5);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  /* Question Width Classes */
+  .question-width-full { width: 100%; }
+  .question-width-half { width: 100%; }
+  .question-width-third { width: 100%; }
+  .question-width-quarter { width: 100%; }
+  
+  @media (min-width: 768px) {
+    .question-width-half { width: 50%; }
+    .question-width-third { width: 33.333333%; }
+    .question-width-quarter { width: 25%; }
+  }
+  
+  /* Preview Modal Styles */
+  .preview-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background-color: white !important;
+    overflow: hidden !important;
+  }
+  
+  .preview-modal-header {
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  
+  .preview-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background-color: white;
+  }
+  
+  /* Ensure modals are above everything */
+  .modal-overlay {
+    z-index: 9999 !important;
+  }
+  
+  .modal-content {
+    z-index: 10000 !important;
+  }
+  
   /* Custom slider styles */
   .slider {
     -webkit-appearance: none;

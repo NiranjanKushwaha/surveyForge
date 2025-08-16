@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { clsx } from "clsx";
 import Icon from "../../../components/AppIcon";
@@ -19,11 +19,320 @@ const SurveyCanvas = ({
   onSurveyDataUpdate, // Add this prop for updating survey data
 }) => {
   console.log("SurveyCanvas received surveyData:", surveyData); // Debug log
+  console.log("SurveyCanvas received onQuestionReorder:", onQuestionReorder); // Debug log
+  
+  // Clean state management
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [previewMode, setPreviewMode] = useState("default");
   const [isJsonEditorOpen, setIsJsonEditorOpen] = useState(false);
   const [jsonEditorValue, setJsonEditorValue] = useState("");
+  const [originalJsonValue, setOriginalJsonValue] = useState("");
+  const [jsonValidationErrors, setJsonValidationErrors] = useState([]);
+  const [isJsonValid, setIsJsonValid] = useState(true);
+  const [jsonEditorHistory, setJsonEditorHistory] = useState([]);
+  const [jsonEditorHistoryIndex, setJsonEditorHistoryIndex] = useState(-1);
+  const [lastAddedQuestionId, setLastAddedQuestionId] = useState(null);
+  
+  // Simple drag state
+  const [draggedQuestionId, setDraggedQuestionId] = useState(null);
+  const [dragOverQuestionId, setDragOverQuestionId] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // Add missing dragScrollInterval state
+  const [dragScrollInterval, setDragScrollInterval] = useState(null);
+  
+  // Add mouse position tracking for drag scroll
+  const [mouseY, setMouseY] = useState(0);
+  
   const canvasRef = useRef(null);
+  const jsonEditorRef = useRef(null);
+
+  // Simple working drag and drop
+  const handleQuestionDragStart = useCallback((e, questionId) => {
+    console.log('🚀 Drag started for question:', questionId);
+    setDraggedQuestionId(questionId);
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', questionId);
+  }, []);
+
+  const handleQuestionDragEnd = useCallback(() => {
+    console.log('🏁 Drag ended');
+    setDraggedQuestionId(null);
+    setDragOverQuestionId(null);
+    setIsDragging(false);
+  }, []);
+
+  const handleQuestionDragOver = useCallback((e, questionId) => {
+    e.preventDefault();
+    if (draggedQuestionId && draggedQuestionId !== questionId) {
+      setDragOverQuestionId(questionId);
+    }
+  }, [draggedQuestionId]);
+
+  const handleQuestionDragLeave = useCallback(() => {
+    setDragOverQuestionId(null);
+  }, []);
+
+  const handleQuestionDrop = useCallback((e, targetQuestionId) => {
+    e.preventDefault();
+    console.log('🎯 Drop on question:', targetQuestionId, 'from:', draggedQuestionId);
+    
+    if (draggedQuestionId && draggedQuestionId !== targetQuestionId) {
+      const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
+      const currentQuestions = currentPage?.questions || [];
+      
+      const fromIndex = currentQuestions.findIndex(q => q.id === draggedQuestionId);
+      const toIndex = currentQuestions.findIndex(q => q.id === targetQuestionId);
+      
+      console.log('📊 Reordering from index:', fromIndex, 'to index:', toIndex);
+      
+      if (fromIndex !== -1 && toIndex !== -1) {
+        if (onQuestionReorder) {
+          onQuestionReorder(fromIndex, toIndex);
+        } else {
+          // Fallback: manually reorder questions
+          const newQuestions = [...currentQuestions];
+          const [movedQuestion] = newQuestions.splice(fromIndex, 1);
+          newQuestions.splice(toIndex, 0, movedQuestion);
+          
+          if (onSurveyDataUpdate) {
+            const newSurveyData = {
+              ...surveyData,
+              pages: surveyData.pages.map(page => 
+                page.id === surveyData.currentPageId 
+                  ? { ...page, questions: newQuestions }
+                  : page
+              )
+            };
+            onSurveyDataUpdate(newSurveyData);
+          }
+        }
+      }
+    }
+    
+    setDraggedQuestionId(null);
+    setDragOverQuestionId(null);
+    setIsDragging(false);
+  }, [draggedQuestionId, surveyData, onQuestionReorder, onSurveyDataUpdate]);
+
+  // Auto-scroll to newly added question
+  useEffect(() => {
+    if (lastAddedQuestionId) {
+      const questionElement = document.getElementById(`survey-canvas-question-${lastAddedQuestionId}`);
+      if (questionElement) {
+        questionElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        setLastAddedQuestionId(null);
+      }
+    }
+  }, [lastAddedQuestionId]);
+
+  // JSON Editor History Management
+  const addToJsonHistory = useCallback((value) => {
+    setJsonEditorHistory(prev => {
+      const newHistory = prev.slice(0, jsonEditorHistoryIndex + 1);
+      newHistory.push(value);
+      return newHistory.slice(-50); // Keep last 50 states
+    });
+    setJsonEditorHistoryIndex(prev => Math.min(prev + 1, 49));
+  }, [jsonEditorHistoryIndex]);
+
+  const undoJsonChange = useCallback(() => {
+    if (jsonEditorHistoryIndex > 0) {
+      const newIndex = jsonEditorHistoryIndex - 1;
+      setJsonEditorHistoryIndex(newIndex);
+      setJsonEditorValue(jsonEditorHistory[newIndex]);
+      validateJSON(jsonEditorHistory[newIndex]);
+    }
+  }, [jsonEditorHistoryIndex, jsonEditorHistory]);
+
+  const redoJsonChange = useCallback(() => {
+    if (jsonEditorHistoryIndex < jsonEditorHistory.length - 1) {
+      const newIndex = jsonEditorHistoryIndex + 1;
+      setJsonEditorHistoryIndex(newIndex);
+      setJsonEditorValue(jsonEditorHistory[newIndex]);
+      validateJSON(jsonEditorHistory[newIndex]);
+    }
+  }, [jsonEditorHistoryIndex, jsonEditorHistory]);
+
+  // Simple JSON Editor functions
+  const openJsonEditor = useCallback(() => {
+    try {
+      const currentJson = JSON.stringify(surveyData, null, 2);
+      setJsonEditorValue(currentJson);
+      setOriginalJsonValue(currentJson);
+      setIsJsonEditorOpen(true);
+    } catch (error) {
+      console.error("Error opening JSON editor:", error);
+      alert("Error opening JSON editor. Please check your survey data.");
+    }
+  }, [surveyData]);
+
+  const closeJsonEditor = useCallback(() => {
+    setIsJsonEditorOpen(false);
+    setJsonEditorValue(originalJsonValue);
+  }, [originalJsonValue]);
+
+  const saveJsonChanges = useCallback(() => {
+    try {
+      const parsedData = JSON.parse(jsonEditorValue);
+      if (onSurveyDataUpdate) {
+        onSurveyDataUpdate(parsedData);
+      }
+      setIsJsonEditorOpen(false);
+      setOriginalJsonValue(jsonEditorValue);
+    } catch (error) {
+      console.error("Error saving JSON:", error);
+      alert("Invalid JSON format. Please check your syntax.");
+    }
+  }, [jsonEditorValue, onSurveyDataUpdate]);
+
+  // Simple JSON validation
+  const validateJSON = useCallback((jsonString) => {
+    try {
+      JSON.parse(jsonString);
+      setJsonValidationErrors([]);
+      setIsJsonValid(true);
+      return true;
+    } catch (error) {
+      setJsonValidationErrors([`Invalid JSON syntax: ${error.message}`]);
+      setIsJsonValid(false);
+      return false;
+    }
+  }, []);
+
+  const handleJsonEditorChange = useCallback((value) => {
+    setJsonEditorValue(value);
+    validateJSON(value);
+  }, [validateJSON]);
+
+  // Auto-scroll during drag operations
+  const startDragScroll = useCallback(() => {
+    if (dragScrollInterval) return;
+    
+    const interval = setInterval(() => {
+      if (!isDragging) return;
+      
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      // Get mouse position from tracked state
+      const currentMouseY = mouseY;
+      const rect = canvas.getBoundingClientRect();
+      const scrollSpeed = 35; // Much faster scrolling for better responsiveness
+      const scrollThreshold = 60; // Smaller threshold for earlier activation
+      
+      // Calculate scroll zones with more aggressive detection
+      const topZone = rect.top + scrollThreshold;
+      const bottomZone = rect.bottom - scrollThreshold;
+      
+      // Add extra scroll zones at the very edges for easier activation
+      const edgeZone = 40;
+      
+      if (currentMouseY < rect.top + edgeZone) {
+        // Very top edge - super fast scroll
+        canvas.scrollTop -= scrollSpeed * 2;
+        showScrollIndicator('top');
+      } else if (currentMouseY < topZone) {
+        // Top zone - normal scroll
+        canvas.scrollTop -= scrollSpeed;
+        showScrollIndicator('top');
+      } else if (currentMouseY > rect.bottom - edgeZone) {
+        // Very bottom edge - super fast scroll
+        canvas.scrollTop += scrollSpeed * 2;
+        showScrollIndicator('bottom');
+      } else if (currentMouseY > bottomZone) {
+        // Bottom zone - normal scroll
+        canvas.scrollTop += scrollSpeed;
+        showScrollIndicator('bottom');
+      } else {
+        // Hide indicators when in middle
+        hideScrollIndicators();
+      }
+    }, 8); // Even higher frequency for ultra-smooth scrolling
+    
+    setDragScrollInterval(interval);
+  }, [isDragging, dragScrollInterval]);
+
+  const stopDragScroll = useCallback(() => {
+    if (dragScrollInterval) {
+      clearInterval(dragScrollInterval);
+      setDragScrollInterval(null);
+    }
+    hideScrollIndicators();
+  }, [dragScrollInterval]);
+
+  // Show/hide scroll indicators
+  const showScrollIndicator = (position) => {
+    let indicator = document.getElementById(`scroll-indicator-${position}`);
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = `scroll-indicator-${position}`;
+      indicator.className = `scroll-indicator-${position}`;
+      indicator.innerHTML = position === 'top' ? '↑' : '↓';
+      document.body.appendChild(indicator);
+    }
+    indicator.style.display = 'flex';
+  };
+
+  const hideScrollIndicators = () => {
+    const topIndicator = document.getElementById('scroll-indicator-top');
+    const bottomIndicator = document.getElementById('scroll-indicator-bottom');
+    if (topIndicator) topIndicator.style.display = 'none';
+    if (bottomIndicator) bottomIndicator.style.display = 'none';
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopDragScroll();
+      hideScrollIndicators();
+    };
+  }, [stopDragScroll]);
+
+  // Add mouse position tracking for drag scroll
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMouseY(e.clientY);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Add keyboard shortcuts for faster navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isJsonEditorOpen && !isPreviewMode) {
+        if (e.ctrlKey || e.metaKey) {
+          switch (e.key) {
+            case 'z':
+              e.preventDefault();
+              // Could implement undo for question operations here
+              break;
+            case 'y':
+              e.preventDefault();
+              // Could implement redo for question operations here
+              break;
+            case 's':
+              e.preventDefault();
+              // Could implement save here
+              break;
+            case 'p':
+              e.preventDefault();
+              onTogglePreview();
+              break;
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isJsonEditorOpen, isPreviewMode, onTogglePreview]);
 
   const handleDragOver = (e) => {
     e?.preventDefault();
@@ -64,7 +373,12 @@ const SurveyCanvas = ({
       console.log("Component data received in SurveyCanvas:", componentData); // Debug log
       
       // Pass the component data directly to the parent component
-      onDrop(componentData, dragOverIndex);
+      const newQuestionId = onDrop(componentData, dragOverIndex);
+      
+      // Set the newly added question ID for auto-scrolling
+      if (newQuestionId) {
+        setLastAddedQuestionId(newQuestionId);
+      }
     } catch (error) {
       console.error("Error handling drop:", error);
     }
@@ -126,33 +440,75 @@ const SurveyCanvas = ({
     console.log("Question type in renderQuestion:", question?.type); // Debug log
     
     const isSelected = selectedQuestionId === question?.id;
+    const isDragging = draggedQuestionId === question?.id;
+    const isDragOver = dragOverQuestionId === question?.id;
 
     return (
       <div key={question?.id} className="relative">
         {/* Drop indicator */}
         {dragOverIndex === index && (
-          <div className="h-1 bg-primary rounded-full mb-3 survey-transition" />
+          <div className="h-2 bg-gradient-to-r from-primary to-blue-500 rounded-full mb-3 survey-transition drop-indicator" />
         )}
+        
+        {/* Drag over indicator for reordering */}
+        {isDragOver && (
+          <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mb-3 survey-transition drop-indicator" />
+        )}
+        
         <div
           data-question-index={index}
+          draggable={true}
+          onDragStart={(e) => {
+            console.log('🎯 Drag start event fired for question:', question?.id); // Debug log
+            handleQuestionDragStart(e, question?.id);
+          }}
+          onDragEnd={(e) => {
+            console.log('🏁 Drag end event fired for question:', question?.id); // Debug log
+            handleQuestionDragEnd(e);
+          }}
+          onDragOver={(e) => {
+            console.log('🔄 Drag over event fired for question:', question?.id); // Debug log
+            handleQuestionDragOver(e, question?.id);
+          }}
+          onDragLeave={(e) => {
+            console.log('👋 Drag leave event fired for question:', question?.id); // Debug log
+            handleQuestionDragLeave(e);
+          }}
+          onDrop={(e) => {
+            console.log('🎯 Drop event fired for question:', question?.id); // Debug log
+            handleQuestionDrop(e, question?.id);
+          }}
           onClick={() => onQuestionSelect(question?.id)}
-          className={`group relative p-4 bg-card border-2 rounded-lg survey-transition cursor-pointer ${
+          className={`group relative p-4 bg-card border-2 rounded-lg survey-transition cursor-pointer transform transition-all duration-200 ${
             isSelected
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50 hover:bg-muted/50"
-          }`}
+              ? "border-primary bg-primary/5 shadow-lg scale-[1.02]"
+              : isDragging
+              ? "border-blue-400 bg-blue-50 opacity-60 scale-95 shadow-2xl"
+              : isDragOver
+              ? "border-blue-400 bg-blue-50 scale-[1.01] shadow-lg"
+              : "border-border hover:border-primary/50 hover:bg-muted/50 hover:scale-[1.005] hover:shadow-md"
+          } ${isDragging ? 'dragging' : ''}`}
           id={`survey-canvas-question-${question?.id}`}
+          style={{
+            transform: isDragging ? 'rotate(2deg) scale(0.95)' : 'none',
+            zIndex: isDragging ? 1000 : 'auto'
+          }}
         >
-          {/* Drag Handle */}
+          {/* Enhanced Drag Handle */}
           <div className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 survey-transition">
-            <div className="p-1 hover:bg-muted rounded cursor-grab active:cursor-grabbing">
+            <div className="p-2 hover:bg-blue-100 rounded-full cursor-grab active:cursor-grabbing transition-all duration-200 hover:scale-110">
               <Icon
                 name="GripVertical"
-                size={16}
-                color="var(--color-text-secondary)"
+                size={18}
+                className="text-blue-500"
               />
             </div>
           </div>
+
+          {/* Drag Overlay */}
+          {isDragOver && (
+            <div className="absolute inset-0 bg-blue-500/10 border-2 border-blue-400 rounded-lg pointer-events-none animate-pulse" />
+          )}
 
           {/* Question Content */}
           <div className="ml-4">
@@ -169,7 +525,13 @@ const SurveyCanvas = ({
                     {question?.type}
                   </span>
                   {question?.required && (
-                    <span className="text-xs text-error">Required</span>
+                    <span className="text-xs text-error bg-red-50 px-2 py-1 rounded-full">Required</span>
+                  )}
+                  {question?.conditionalLogic?.enabled && (
+                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full flex items-center">
+                      <Icon name="GitBranch" size={10} className="mr-1" />
+                      Logic
+                    </span>
                   )}
                 </div>
                 <input
@@ -195,21 +557,21 @@ const SurveyCanvas = ({
                     e?.stopPropagation();
                     onQuestionDuplicate(question?.id);
                   }}
-                  className="p-1 hover:bg-muted rounded survey-transition survey-canvas-duplicate-question-button"
+                  className="p-2 hover:bg-blue-100 rounded-full survey-transition survey-canvas-duplicate-question-button transition-all duration-200 hover:scale-110"
                   title="Duplicate Question"
                   id={`survey-canvas-duplicate-question-button-${question?.id}`}
                 >
-                  <Icon name="Copy" size={14} />
+                  <Icon name="Copy" size={14} className="text-blue-600" />
                 </button>
                 <button
                   onClick={(e) => {
                     e?.stopPropagation();
                     onQuestionDelete(question?.id);
                   }}
-                  className="p-1 hover:bg-error/10 hover:text-error rounded survey-transition survey-canvas-delete-question-button"
+                  className="p-2 hover:bg-red-100 rounded-full survey-transition survey-canvas-delete-question-button transition-all duration-200 hover:scale-110"
                   title="Delete Question"
                 >
-                  <Icon name="Trash2" size={14} />
+                  <Icon name="Trash2" size={14} className="text-red-600" />
                 </button>
               </div>
             </div>
@@ -1089,10 +1451,7 @@ const SurveyCanvas = ({
               variant="outline"
               size="sm"
               iconName="Code"
-              onClick={() => {
-                setJsonEditorValue(JSON.stringify(surveyData, null, 2));
-                setIsJsonEditorOpen(true);
-              }}
+              onClick={openJsonEditor}
               className="survey-canvas-json-editor-button"
               id="survey-canvas-json-editor-button"
             >
@@ -1107,11 +1466,15 @@ const SurveyCanvas = ({
       {/* Canvas Content */}
       <div
         ref={canvasRef}
-        className="flex-1 overflow-y-auto p-4"
+        className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${
+          isDragging ? 'drag-scroll-zone' : ''
+        }`}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onDragLeave={handleDragLeave}
       >
+
+        
         {(() => {
           const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
           const currentQuestions = currentPage?.questions || [];
@@ -1135,31 +1498,55 @@ const SurveyCanvas = ({
           
           return (
             <div className="space-y-4 max-w-4xl mx-auto">
-              {currentQuestions?.map((question, index) =>
-                renderQuestion(question, index)
+              {/* Enhanced Drag Scroll Zone Indicator */}
+              {isDragging && (
+                <div className="text-center text-sm text-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4 shadow-sm">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <Icon name="MousePointer" size={16} className="text-blue-600" />
+                    <span className="font-semibold">🎯 Drag & Drop Active</span>
+                  </div>
+                  <p className="text-blue-700">
+                    <strong>Move your mouse to the top or bottom edges to scroll quickly</strong>
+                  </p>
+                  <div className="mt-2 text-xs text-blue-600">
+                    💡 Tip: You can drag questions anywhere in the canvas to reorder them
+                  </div>
+                </div>
               )}
+              
+              {/* Questions with enhanced spacing */}
+              <div className="space-y-6">
+                {currentQuestions?.map((question, index) =>
+                  renderQuestion(question, index)
+                )}
+              </div>
 
-              {/* Final drop zone */}
+              {/* Final drop zone with enhanced styling */}
               {dragOverIndex === currentQuestions?.length && (
-                <div className="h-1 bg-primary rounded-full survey-transition" />
+                <div className="h-3 bg-gradient-to-r from-primary via-blue-500 to-purple-500 rounded-full survey-transition drop-indicator shadow-lg" />
               )}
             </div>
           );
         })()}
       </div>
 
-      {/* Preview Modal */}
+      {/* Preview Modal - Full Screen */}
       {isPreviewMode &&
         createPortal(
-          <div id="survey-canvas-preview-container" className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-card border border-border shadow-lg w-full h-full md:w-[90%] md:h-[90%] rounded-lg max-w-4xl overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-border bg-surface">
+          <>
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998]" onClick={onTogglePreview} />
+            
+            {/* Preview Modal */}
+            <div id="survey-canvas-preview-container" className="preview-modal">
+              {/* Preview Header */}
+              <div className="preview-modal-header">
                 <div>
                   <h2 className="text-xl font-semibold text-foreground">
-                    {surveyData?.title}
+                    {surveyData?.title || "Survey Preview"}
                   </h2>
                   <p className="text-sm text-text-secondary mt-1">
-                    {surveyData?.description}
+                    {surveyData?.description || "Preview your survey in different modes"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1189,12 +1576,13 @@ const SurveyCanvas = ({
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto">
+              {/* Preview Content - Full Screen */}
+              <div className="preview-modal-content">
                 {(() => {
-                  const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
-                  const currentQuestions = currentPage?.questions || [];
+                  // Get all questions from all pages for comprehensive preview
+                  const allQuestions = surveyData?.pages?.flatMap(page => page?.questions || []) || [];
                   
-                  if (currentQuestions?.length === 0) {
+                  if (allQuestions.length === 0) {
                     return (
                       <div id="survey-canvas-preview-no-questions-content" className="flex flex-col items-center justify-center h-full text-center p-6">
                         <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4">
@@ -1220,7 +1608,7 @@ const SurveyCanvas = ({
                       {(() => {
                         const transformedData = transformDataForSurveyViewer({
                           ...surveyData,
-                          questions: currentQuestions
+                          questions: allQuestions
                         });
                         
                         if (!transformedData || !transformedData.pages || transformedData.pages.length === 0) {
@@ -1266,15 +1654,16 @@ const SurveyCanvas = ({
                 })()}
               </div>
             </div>
-          </div>,
+          </>,
           document.body
         )}
 
-      {/* JSON Editor Modal */}
+      {/* Simple JSON Editor Modal */}
       {isJsonEditorOpen &&
         createPortal(
-          <div id="survey-canvas-json-editor-modal" className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-card border border-border shadow-lg w-full h-full md:w-[90%] md:h-[90%] rounded-lg max-w-6xl overflow-hidden flex flex-col">
+          <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-[9998] flex items-center justify-center p-4">
+            <div className="bg-card border border-border shadow-lg w-full h-full rounded-lg max-w-4xl overflow-hidden flex flex-col">
+              {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border bg-surface">
                 <div>
                   <h2 className="text-xl font-semibold text-foreground">
@@ -1288,44 +1677,60 @@ const SurveyCanvas = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      try {
-                        const parsedData = JSON.parse(jsonEditorValue);
-                        // Here you would typically call a function to update the survey data
-                        console.log("Updated survey data:", parsedData);
-                        onSurveyDataUpdate(parsedData); // Update the main surveyData prop
-                        setIsJsonEditorOpen(false);
-                      } catch (error) {
-                        alert("Invalid JSON format. Please check your syntax.");
-                      }
-                    }}
+                    onClick={saveJsonChanges}
                     className="survey-canvas-json-editor-save-button"
                     id="survey-canvas-json-editor-save-button"
+                    disabled={!isJsonValid}
                   >
                     <Icon name="Save" size={16} className="mr-1" />
                     Save Changes
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setIsJsonEditorOpen(false)}>
+                  <Button variant="ghost" size="icon" onClick={closeJsonEditor}>
                     <Icon name="X" size={20} />
                   </Button>
                 </div>
               </div>
 
+              {/* Content */}
               <div className="flex-1 overflow-hidden">
                 <textarea
+                  ref={jsonEditorRef}
                   value={jsonEditorValue}
-                  onChange={(e) => setJsonEditorValue(e.target.value)}
+                  onChange={(e) => handleJsonEditorChange(e.target.value)}
                   className="w-full h-full p-4 font-mono text-sm bg-background text-foreground border-none outline-none resize-none"
                   placeholder="Enter JSON here..."
                   id="survey-canvas-json-editor-textarea"
                 />
               </div>
 
+              {/* Footer */}
               <div className="p-4 border-t border-border bg-surface">
                 <div className="flex items-center justify-between text-sm text-text-secondary">
                   <span>JSON Editor - Make sure to maintain valid JSON syntax</span>
-                  <span>{jsonEditorValue.length} characters</span>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      isJsonValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {isJsonValid ? 'Valid JSON' : 'Invalid JSON'}
+                    </span>
+                    <span>{jsonEditorValue.length} characters</span>
+                  </div>
                 </div>
+                
+                {/* Validation Errors */}
+                {jsonValidationErrors.length > 0 && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Icon name="AlertCircle" size={16} color="var(--color-error)" />
+                      <h4 className="font-semibold text-red-800">JSON Validation Errors:</h4>
+                    </div>
+                    <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
+                      {jsonValidationErrors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </div>,

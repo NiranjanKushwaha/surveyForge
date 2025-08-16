@@ -18,7 +18,13 @@ const VisualSurveyBuilder = () => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // Survey data state
-  const [surveyData, setSurveyData] = useState(mockJSONData);
+  const [surveyData, setSurveyData] = useState({
+    id: "survey_001",
+    title: "Customer Satisfaction Survey",
+    description: "Help us improve our services by sharing your feedback",
+    currentPageId: "page_1",
+    pages: [],
+  });
 
   // Selection and history states
   const [selectedQuestionId, setSelectedQuestionId] = useState("q1");
@@ -188,15 +194,19 @@ const VisualSurveyBuilder = () => {
     const pageIndex = newSurveyData?.pages?.findIndex(
       (page) => page?.id === surveyData?.currentPageId
     );
-    const questions = [...newSurveyData?.pages?.[pageIndex]?.questions];
+    
+    if (pageIndex !== -1) {
+      const questions = [...newSurveyData?.pages?.[pageIndex]?.questions];
 
-    const [movedQuestion] = questions?.splice(fromIndex, 1);
-    questions?.splice(toIndex, 0, movedQuestion);
+      const [movedQuestion] = questions?.splice(fromIndex, 1);
+      questions?.splice(toIndex, 0, movedQuestion);
 
-    newSurveyData.pages[pageIndex].questions = questions;
+      newSurveyData.pages[pageIndex].questions = questions;
+      newSurveyData.pages[pageIndex].questionCount = questions.length;
 
-    setSurveyData(newSurveyData);
-    addToHistory(newSurveyData);
+      setSurveyData(newSurveyData);
+      addToHistory(newSurveyData);
+    }
   };
 
   const handleDrop = (component, insertIndex) => {
@@ -251,7 +261,12 @@ const VisualSurveyBuilder = () => {
       setSurveyData(newSurveyData);
       addToHistory(newSurveyData);
       setSelectedQuestionId(newQuestion?.id);
+      
+      // Return the new question ID for auto-scrolling
+      return newQuestion.id;
     }
+    
+    return null;
   };
 
   // Page navigation handlers
@@ -445,6 +460,7 @@ const VisualSurveyBuilder = () => {
             onQuestionUpdate={handleQuestionUpdate}
             isCollapsed={isPropertiesCollapsed}
             onToggleCollapse={handlePropertiesToggle}
+            surveyData={surveyData}
             className="transition-all duration-300 ease-in-out"
           />
         </div>

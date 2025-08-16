@@ -4,7 +4,7 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Checkbox from "../../../components/ui/Checkbox";
 
-const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onToggleCollapse }) => {
+const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onToggleCollapse, surveyData }) => {
   const [activeTab, setActiveTab] = useState('general');
 
   const tabs = [
@@ -13,6 +13,20 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
     { id: 'logic', name: 'Logic', icon: 'GitBranch' },
     { id: 'styling', name: 'Styling', icon: 'Palette' }
   ];
+
+  // Get all questions from all pages for conditional logic
+  const getAllQuestions = () => {
+    if (!surveyData?.pages) return [];
+    
+    return surveyData.pages.flatMap((page, pageIndex) => 
+      page.questions?.map((question, qIndex) => ({
+        id: question.id,
+        label: `${page.name} - Q${qIndex + 1}: ${question.title}`,
+        pageName: page.name,
+        questionIndex: qIndex + 1
+      })) || []
+    ).filter(q => q.id !== selectedQuestion?.id); // Exclude current question
+  };
 
   const handleInputChange = (field, value) => {
     onQuestionUpdate(selectedQuestion?.id, { [field]: value });
@@ -300,10 +314,11 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
                     })}
                   >
                     <option value="">Select previous question...</option>
-                    {/* This will be populated dynamically from parent component */}
-                    <option value="q1">q1: What is your full name?</option>
-                    <option value="q2">q2: What is your email address?</option>
-                    <option value="q3">q3: How did you hear about us?</option>
+                    {getAllQuestions()?.map((q) => (
+                      <option key={q.id} value={q.id}>
+                        {q.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 

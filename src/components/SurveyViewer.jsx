@@ -244,10 +244,25 @@ const SurveyViewer = ({
       customStyles?.error || ""
     );
 
+    // Get question width for responsive layout
+    const getQuestionWidth = () => {
+      if (mode !== "form") return "w-full";
+      
+      const width = question?.styling?.width || 'full';
+      switch (width) {
+        case 'half': return 'w-full md:w-1/2';
+        case 'third': return 'w-full md:w-1/3';
+        case 'quarter': return 'w-full md:w-1/4';
+        default: return 'w-full';
+      }
+    };
+
+    const questionWidth = getQuestionWidth();
+
     switch (question?.type) {
       case "text-input":
         return (
-          <div key={questionId} className="mb-6">
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
             <label htmlFor={questionId} className={baseLabelClasses}>
               {question?.title}
               {question?.required && <span className="text-red-500 ml-1">*</span>}
@@ -271,7 +286,7 @@ const SurveyViewer = ({
 
       case "email":
         return (
-          <div key={questionId} className="mb-6">
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
             <label htmlFor={questionId} className={baseLabelClasses}>
               {question?.title}
               {question?.required && <span className="text-red-500 ml-1">*</span>}
@@ -295,7 +310,7 @@ const SurveyViewer = ({
 
       case "textarea":
         return (
-          <div key={questionId} className="mb-6">
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
             <label htmlFor={questionId} className={baseLabelClasses}>
               {question?.title}
               {question?.required && <span className="text-red-500 ml-1">*</span>}
@@ -307,11 +322,11 @@ const SurveyViewer = ({
               id={questionId}
               name={questionId}
               value={value || ""}
-              onChange={(e) => handleInputChange(questionId, e?.target?.value)}
               placeholder={question?.placeholder}
               rows={4}
               className={baseInputClasses}
               required={question?.required}
+              onChange={(e) => handleInputChange(questionId, e?.target?.value)}
             />
             {error && <p className={baseErrorClasses}>{error}</p>}
           </div>
@@ -319,7 +334,7 @@ const SurveyViewer = ({
 
       case "radio":
         return (
-          <div key={questionId} className="mb-6">
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
             <label className={baseLabelClasses}>
               {question?.title}
               {question?.required && <span className="text-red-500 ml-1">*</span>}
@@ -349,7 +364,7 @@ const SurveyViewer = ({
 
       case "checkbox":
         return (
-          <div key={questionId} className="mb-6">
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
             <label className={baseLabelClasses}>
               {question?.title}
               {question?.required && <span className="text-red-500 ml-1">*</span>}
@@ -386,7 +401,7 @@ const SurveyViewer = ({
 
       case "rating":
         return (
-          <div key={questionId} className="mb-6">
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
             <label className={baseLabelClasses}>
               {question?.title}
               {question?.required && <span className="text-red-500 ml-1">*</span>}
@@ -418,7 +433,7 @@ const SurveyViewer = ({
 
       case "dropdown":
         return (
-          <div key={questionId} className="mb-6">
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
             <label htmlFor={questionId} className={baseLabelClasses}>
               {question?.title}
               {question?.required && <span className="text-red-500 ml-1">*</span>}
@@ -449,6 +464,53 @@ const SurveyViewer = ({
         return null;
     }
   }, [formData, errors, handleInputChange, shouldShowQuestion, mode, customStyles]);
+
+  // Render all questions from all pages
+  const renderAllQuestions = () => {
+    if (!surveyData?.pages) return null;
+
+    const allQuestions = surveyData.pages.flatMap(page => page.questions || []);
+    
+    if (mode === "form") {
+      // In form mode, use responsive grid layout with better spacing
+      return (
+        <div className="space-y-8">
+          {/* Group questions by page for better organization */}
+          {surveyData.pages.map((page, pageIndex) => {
+            if (!page.questions || page.questions.length === 0) return null;
+            
+            return (
+              <div key={page.id} className="space-y-6">
+                {page.name && (
+                  <div className="border-b border-gray-200 pb-2">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {page.name}
+                    </h3>
+                    {pageIndex === 0 && surveyData.description && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        {surveyData.description}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {page.questions.map(renderQuestion)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    } else {
+      // In survey mode, show questions page by page
+      return (
+        <div>
+          {currentPage?.questions?.map(renderQuestion)}
+        </div>
+      );
+    }
+  };
 
   // Render progress indicator
   const renderProgress = () => {
@@ -549,7 +611,7 @@ const SurveyViewer = ({
 
       {/* Questions */}
       <form onSubmit={(e) => e.preventDefault()}>
-        {currentPage?.questions?.map(renderQuestion)}
+        {renderAllQuestions()}
       </form>
 
       {/* Navigation */}
