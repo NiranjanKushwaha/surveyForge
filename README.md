@@ -1,6 +1,6 @@
-# React
+# SurveyForge
 
-A modern React-based project utilizing the latest frontend technologies and tools for building responsive web applications.
+A modern survey creation and management platform built with React, developed by Niranjan Kushwaha. This application provides comprehensive tools for creating, managing, and analyzing surveys using the latest frontend technologies.
 
 ## 🚀 Features
 
@@ -100,8 +100,8 @@ npm run build
 
 ## 🙏 Acknowledgments
 
-- Built with [Rocket.new](https://rocket.new)
+- Developed by Niranjan Kushwaha
 - Powered by React and Vite
 - Styled with Tailwind CSS
 
-Built with ❤️ on Rocket.new
+© 2025 Niranjan Kushwaha. All rights reserved.
