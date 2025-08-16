@@ -3,11 +3,10 @@ import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
-import SurveyBuilderDashboard from "./pages/survey-builder-dashboard";
-import VisualSurveyBuilder from "./pages/visual-survey-builder";
-import SurveyRuntimeRenderer from "./pages/survey-runtime-renderer";
-import SurveyAnalyticsDashboard from "./pages/survey-analytics-dashboard";
-import QuestionLibraryManager from "./pages/question-library-manager";
+import SurveyBuilderDashboard from "./pages/survey-builder-dashboard/SurveyBuilderDashboard";
+import VisualSurveyBuilder from "./pages/visual-survey-builder/VisualSurveyBuilder";
+import SurveyViewerPage from "./pages/survey-viewer/SurveyViewerPage";
+import DemoIntegration from "./pages/demo-integration/DemoIntegration";
 
 const Routes = () => {
   return (
@@ -26,25 +25,10 @@ const Routes = () => {
             element={<VisualSurveyBuilder />}
           />
           <Route
-            path="/survey-runtime-renderer"
-            element={<SurveyRuntimeRenderer />}
+            path="/survey-viewer/:surveyId"
+            element={<SurveyViewerPage />}
           />
-          <Route
-            path="/survey-runtime-renderer/:surveyId"
-            element={<SurveyRuntimeRenderer />}
-          />
-          <Route
-            path="/survey-analytics-dashboard"
-            element={<SurveyAnalyticsDashboard />}
-          />
-          <Route
-            path="/survey-analytics-dashboard/:surveyId"
-            element={<SurveyAnalyticsDashboard />}
-          />
-          <Route
-            path="/question-library-manager"
-            element={<QuestionLibraryManager />}
-          />
+          <Route path="/demo-integration" element={<DemoIntegration />} />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>

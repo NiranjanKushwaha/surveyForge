@@ -1,17 +1,22 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import Icon from '../AppIcon';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import Icon from "../AppIcon";
 
 const Breadcrumb = ({ items = [] }) => {
   const location = useLocation();
 
   // Auto-generate breadcrumbs based on current path if no items provided
   const generateBreadcrumbs = () => {
-    const pathSegments = location?.pathname?.split('/')?.filter(Boolean);
-    const breadcrumbs = [{ label: 'Dashboard', path: '/survey-builder-dashboard' }];
+    const pathSegments = location?.pathname?.split("/")?.filter(Boolean);
+    const breadcrumbs = [
+      { label: "Dashboard", path: "/survey-builder-dashboard" },
+    ];
 
-    if (location?.pathname === '/visual-survey-builder') {
-      breadcrumbs?.push({ label: 'Visual Builder', path: '/visual-survey-builder' });
+    if (location?.pathname === "/visual-survey-builder") {
+      breadcrumbs?.push({
+        label: "Visual Builder",
+        path: "/visual-survey-builder",
+      });
     }
 
     return breadcrumbs;
@@ -24,22 +29,28 @@ const Breadcrumb = ({ items = [] }) => {
   }
 
   return (
-    <nav className="flex items-center space-x-2 text-sm text-text-secondary mb-6" aria-label="Breadcrumb">
+    <nav
+      className="flex items-center space-x-2 text-sm text-text-secondary mb-1"
+      aria-label="Breadcrumb"
+    >
       <ol className="flex items-center space-x-2">
         {breadcrumbItems?.map((item, index) => {
           const isLast = index === breadcrumbItems?.length - 1;
-          
+
           return (
             <li key={item?.path || index} className="flex items-center">
               {index > 0 && (
-                <Icon 
-                  name="ChevronRight" 
-                  size={14} 
-                  className="mx-2 text-border" 
+                <Icon
+                  name="ChevronRight"
+                  size={14}
+                  className="mx-2 text-border"
                 />
               )}
               {isLast ? (
-                <span className="font-medium text-foreground" aria-current="page">
+                <span
+                  className="font-medium text-foreground"
+                  aria-current="page"
+                >
                   {item?.label}
                 </span>
               ) : (

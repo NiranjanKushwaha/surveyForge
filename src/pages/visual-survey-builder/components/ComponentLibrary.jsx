@@ -70,11 +70,12 @@ const ComponentLibrary = ({ isCollapsed, onToggleCollapse, onDragStart }) => {
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-card border-r border-border flex flex-col items-center py-4 space-y-4">
+      <div id="component-library-collapsed" className="w-12 bg-card border-r border-border flex flex-col items-center py-4 space-y-4 component-library-collapsed">
         <button
           onClick={onToggleCollapse}
-          className="p-2 hover:bg-muted rounded-md survey-transition"
+          className="p-2 hover:bg-muted rounded-md survey-transition component-library-expand-button"
           title="Expand Component Library"
+          id="component-library-expand-button"
         >
           <Icon name="ChevronRight" size={16} />
         </button>
@@ -85,12 +86,13 @@ const ComponentLibrary = ({ isCollapsed, onToggleCollapse, onDragStart }) => {
               setActiveCategory(category?.id);
               onToggleCollapse();
             }}
-            className={`p-2 rounded-md survey-transition ${
+            className={`p-2 rounded-md survey-transition component-library-category-button-collapsed ${
               activeCategory === category?.id
                 ? 'bg-primary text-primary-foreground'
                 : 'hover:bg-muted text-text-secondary'
             }`}
             title={category?.name}
+            id={`component-library-category-button-${category?.id}`}
           >
             <Icon name={category?.icon} size={16} />
           </button>
@@ -100,14 +102,15 @@ const ComponentLibrary = ({ isCollapsed, onToggleCollapse, onDragStart }) => {
   }
 
   return (
-    <div className="w-64 bg-card border-r border-border flex flex-col h-full">
+    <div id="component-library-expanded" className="w-64 bg-card border-r border-border flex flex-col h-full component-library-expanded">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <h2 className="text-sm font-semibold text-foreground">Components</h2>
         <button
           onClick={onToggleCollapse}
-          className="p-1 hover:bg-muted rounded-md survey-transition"
+          className="p-1 hover:bg-muted rounded-md survey-transition component-library-collapse-button"
           title="Collapse Panel"
+          id="component-library-collapse-button"
         >
           <Icon name="ChevronLeft" size={16} />
         </button>
@@ -118,11 +121,12 @@ const ComponentLibrary = ({ isCollapsed, onToggleCollapse, onDragStart }) => {
           <button
             key={category?.id}
             onClick={() => setActiveCategory(category?.id)}
-            className={`flex items-center space-x-1 px-2 py-1 rounded-md text-xs font-medium survey-transition ${
+            className={`flex items-center space-x-1 px-2 py-1 rounded-md text-xs font-medium survey-transition component-library-category-tab ${
               activeCategory === category?.id
                 ? 'bg-primary text-primary-foreground'
                 : 'text-text-secondary hover:text-foreground hover:bg-muted'
             }`}
+            id={`component-library-category-tab-${category?.id}`}
           >
             <Icon name={category?.icon} size={12} />
             <span className="hidden lg:inline">{category?.name}</span>
