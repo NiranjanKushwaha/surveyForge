@@ -13,9 +13,10 @@ const SurveyCanvas = ({
   onQuestionDuplicate,
   onQuestionReorder,
   onDrop,
+  isPreviewMode,
+  onTogglePreview,
 }) => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
   const canvasRef = useRef(null);
 
   const handleDragOver = (e) => {
@@ -373,7 +374,7 @@ const SurveyCanvas = ({
   };
 
   return (
-    <div className="flex-1 bg-surface overflow-hidden">
+    <div className="flex-1 bg-surface flex flex-col">
       {/* Canvas Header */}
       <div className="bg-card border-b border-border p-4">
         <div className="flex items-center justify-between">
@@ -390,7 +391,7 @@ const SurveyCanvas = ({
               variant="outline"
               size="sm"
               iconName="Eye"
-              onClick={() => setShowPreview(true)}
+              onClick={onTogglePreview}
             >
               Preview
             </Button>
@@ -435,19 +436,15 @@ const SurveyCanvas = ({
         )}
       </div>
 
-      {showPreview &&
+      {isPreviewMode &&
         createPortal(
-          <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-3xl h-full max-h-[90vh] flex flex-col">
+          <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-card border border-border shadow-lg w-full h-full rounded-none max-w-full max-h-full flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <h2 className="text-xl font-semibold text-foreground">
                   Survey Preview: {surveyData?.title}
                 </h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowPreview(false)}
-                >
+                <Button variant="ghost" size="icon" onClick={onTogglePreview}>
                   <Icon name="X" size={20} />
                 </Button>
               </div>
@@ -460,12 +457,12 @@ const SurveyCanvas = ({
                   surveyData?.questions?.map((question) => (
                     <div
                       key={question?.id}
-                      className="bg-surface border border-border rounded-md p-4"
+                      className="bg-surface border border-border rounded-md p-3"
                     >
-                      <h3 className="text-lg font-medium text-foreground mb-3">
+                      <h3 className="text-lg font-medium text-foreground mb-2">
                         {question?.title}
                       </h3>
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {renderQuestionPreview(question)}
                       </div>
                     </div>
@@ -473,9 +470,7 @@ const SurveyCanvas = ({
                 )}
               </div>
               <div className="p-4 border-t border-border text-right">
-                <Button onClick={() => setShowPreview(false)}>
-                  Close Preview
-                </Button>
+                <Button onClick={onTogglePreview}>Close Preview</Button>
               </div>
             </div>
           </div>,
