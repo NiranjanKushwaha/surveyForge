@@ -5,9 +5,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import SurveyBuilderDashboard from "./pages/survey-builder-dashboard";
 import VisualSurveyBuilder from "./pages/visual-survey-builder";
-import SurveyRuntimeRenderer from "./pages/survey-runtime-renderer";
-import SurveyAnalyticsDashboard from "./pages/survey-analytics-dashboard";
-import QuestionLibraryManager from "./pages/question-library-manager";
 
 const Routes = () => {
   return (
@@ -24,26 +21,6 @@ const Routes = () => {
           <Route
             path="/visual-survey-builder"
             element={<VisualSurveyBuilder />}
-          />
-          <Route
-            path="/survey-runtime-renderer"
-            element={<SurveyRuntimeRenderer />}
-          />
-          <Route
-            path="/survey-runtime-renderer/:surveyId"
-            element={<SurveyRuntimeRenderer />}
-          />
-          <Route
-            path="/survey-analytics-dashboard"
-            element={<SurveyAnalyticsDashboard />}
-          />
-          <Route
-            path="/survey-analytics-dashboard/:surveyId"
-            element={<SurveyAnalyticsDashboard />}
-          />
-          <Route
-            path="/question-library-manager"
-            element={<QuestionLibraryManager />}
           />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
