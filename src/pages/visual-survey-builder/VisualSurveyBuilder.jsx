@@ -98,6 +98,13 @@ const VisualSurveyBuilder = () => {
     // Handle drag start if needed
   };
 
+  // Handle survey data updates from JSON editor
+  const handleSurveyDataUpdate = (newSurveyData) => {
+    setSurveyData(newSurveyData);
+    addToHistory(newSurveyData);
+    setSelectedQuestionId(null); // Clear selection when data structure changes
+  };
+
   // Canvas handlers
   const handleQuestionSelect = (questionId) => {
     setSelectedQuestionId(questionId);
@@ -193,15 +200,24 @@ const VisualSurveyBuilder = () => {
   };
 
   const handleDrop = (component, insertIndex) => {
+    console.log("Dropping component:", component); // Debug log
+    
+    // Generate unique name for the new question
+    const questionName = `q_${Date.now()}`;
+    
     const newQuestion = {
-      id: `q_${Date.now()}`,
+      id: questionName,
+      name: questionName,
       type: component?.id,
       icon: component?.icon,
       title: `New ${component?.name}`,
       description: "",
       required: false,
       placeholder: "",
-      options: component?.defaultOptions || [],
+      options: component?.id === "radio" || component?.id === "checkbox" || component?.id === "dropdown" || component?.id === "multi-select" ? [
+        { id: `opt_${Date.now()}_1`, label: "Option 1", value: "option_1" },
+        { id: `opt_${Date.now()}_2`, label: "Option 2", value: "option_2" }
+      ] : [],
       validation: component?.defaultValidation || {},
       conditionalLogic: {
         enabled: false,
@@ -210,6 +226,10 @@ const VisualSurveyBuilder = () => {
         value: "",
       },
     };
+    
+    console.log("Created question:", newQuestion); // Debug log
+    console.log("Question type:", newQuestion.type); // Debug log
+    console.log("Component ID:", component?.id); // Debug log
 
     const newSurveyData = { ...surveyData };
     const pageIndex = newSurveyData?.pages?.findIndex(
@@ -224,6 +244,9 @@ const VisualSurveyBuilder = () => {
       );
       newSurveyData.pages[pageIndex].questionCount =
         newSurveyData?.pages?.[pageIndex]?.questions?.length;
+
+      console.log("Updated survey data:", newSurveyData); // Debug log
+      console.log("Questions in current page:", newSurveyData.pages[pageIndex].questions); // Debug log
 
       setSurveyData(newSurveyData);
       addToHistory(newSurveyData);
@@ -403,10 +426,7 @@ const VisualSurveyBuilder = () => {
           
           {/* Survey Canvas */}
           <SurveyCanvas
-            surveyData={{
-              ...surveyData,
-              questions: currentQuestions,
-            }}
+            surveyData={surveyData}
             onQuestionSelect={handleQuestionSelect}
             selectedQuestionId={selectedQuestionId}
             onQuestionUpdate={handleQuestionUpdate}
@@ -416,6 +436,7 @@ const VisualSurveyBuilder = () => {
             onDrop={handleDrop}
             isPreviewMode={isPreviewMode}
             onTogglePreview={handlePreview}
+            onSurveyDataUpdate={handleSurveyDataUpdate}
           />
           
           {/* Properties Panel */}

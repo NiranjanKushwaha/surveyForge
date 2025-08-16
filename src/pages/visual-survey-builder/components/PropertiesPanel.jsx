@@ -84,6 +84,8 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
 
   const renderGeneralTab = () => (
     <div className="space-y-4">
+
+
       <Input
         label="Question Title"
         type="text"
@@ -149,6 +151,13 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
                   value={option?.label}
                   onChange={(e) => handleOptionChange(index, 'label', e?.target?.value)}
                   placeholder={`Option ${index + 1}`}
+                  className="flex-1"
+                />
+                <Input
+                  type="text"
+                  value={option?.value}
+                  onChange={(e) => handleOptionChange(index, 'value', e?.target?.value)}
+                  placeholder={`value_${index + 1}`}
                   className="flex-1"
                 />
                 <button
@@ -265,43 +274,79 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
 
       <div className="space-y-3">
         <Checkbox
-          label="Enable Skip Logic"
-          checked={selectedQuestion?.logic?.enabled || false}
-          onChange={(e) => handleInputChange('logic', { 
-            ...selectedQuestion?.logic, 
+          label="Enable Conditional Logic"
+          checked={selectedQuestion?.conditionalLogic?.enabled || false}
+          onChange={(e) => handleInputChange('conditionalLogic', { 
+            ...selectedQuestion?.conditionalLogic, 
             enabled: e?.target?.checked 
           })}
         />
 
-        {selectedQuestion?.logic?.enabled && (
+        {selectedQuestion?.conditionalLogic?.enabled && (
           <div className="space-y-3 pl-4 border-l-2 border-primary">
             <div className="text-sm font-medium text-foreground">Show this question when:</div>
             
             <div className="p-3 bg-surface rounded border border-border">
               <div className="text-xs text-text-secondary mb-2">Condition Builder</div>
               <div className="space-y-2">
-                <select className="w-full px-2 py-1 text-xs border border-border rounded">
-                  <option>Select previous question...</option>
-                  <option>Question 1: Name</option>
-                  <option>Question 2: Age</option>
-                </select>
-                <select className="w-full px-2 py-1 text-xs border border-border rounded">
-                  <option>equals</option>
-                  <option>not equals</option>
-                  <option>contains</option>
-                  <option>is empty</option>
-                </select>
-                <input 
-                  type="text" 
-                  placeholder="Value..."
-                  className="w-full px-2 py-1 text-xs border border-border rounded"
-                />
+                <div>
+                  <label className="text-xs text-text-secondary block mb-1">Previous Question</label>
+                  <select 
+                    className="w-full px-2 py-1 text-xs border border-border rounded"
+                    value={selectedQuestion?.conditionalLogic?.dependsOn || ''}
+                    onChange={(e) => handleInputChange('conditionalLogic', { 
+                      ...selectedQuestion?.conditionalLogic, 
+                      dependsOn: e?.target?.value 
+                    })}
+                  >
+                    <option value="">Select previous question...</option>
+                    {/* This will be populated dynamically from parent component */}
+                    <option value="q1">q1: What is your full name?</option>
+                    <option value="q2">q2: What is your email address?</option>
+                    <option value="q3">q3: How did you hear about us?</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-text-secondary block mb-1">Condition</label>
+                  <select 
+                    className="w-full px-2 py-1 text-xs border border-border rounded"
+                    value={selectedQuestion?.conditionalLogic?.condition || 'equals'}
+                    onChange={(e) => handleInputChange('conditionalLogic', { 
+                      ...selectedQuestion?.conditionalLogic, 
+                      condition: e?.target?.value 
+                    })}
+                  >
+                    <option value="equals">equals</option>
+                    <option value="not_equals">not equals</option>
+                    <option value="contains">contains</option>
+                    <option value="not_contains">not contains</option>
+                    <option value="greater_than">greater than</option>
+                    <option value="less_than">less than</option>
+                    <option value="is_empty">is empty</option>
+                    <option value="is_not_empty">is not empty</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-text-secondary block mb-1">Value</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter value to compare against..."
+                    className="w-full px-2 py-1 text-xs border border-border rounded"
+                    value={selectedQuestion?.conditionalLogic?.value || ''}
+                    onChange={(e) => handleInputChange('conditionalLogic', { 
+                      ...selectedQuestion?.conditionalLogic, 
+                      value: e?.target?.value 
+                    })}
+                  />
+                </div>
               </div>
             </div>
 
-            <Button variant="outline" size="sm" iconName="Plus">
-              Add Condition
-            </Button>
+            <div className="text-xs text-text-secondary bg-blue-50 p-2 rounded border border-blue-200">
+              <strong>Example:</strong> Show this question when "Would you like us to contact you?" equals "Yes, please contact me"
+            </div>
           </div>
         )}
       </div>

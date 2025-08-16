@@ -9,11 +9,19 @@ const SurveyViewer = ({
   onQuestionChange,
   initialValues = {},
   className = "",
+  submitButton = {
+    label: "Complete",
+    className: "bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors",
+    variant: "primary", // "primary", "secondary", "success", "warning", "danger", "outline", "ghost", "custom"
+    loadingLabel: "Submitting...",
+    disabled: false
+  },
   ...props
 }) => {
   const [formData, setFormData] = useState(initialValues);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get current page data
   const currentPage = surveyData?.pages?.[currentPageIndex];
@@ -82,10 +90,77 @@ const SurveyViewer = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateCurrentPage()) {
-      if (onSubmit) {
-        onSubmit(formData);
+      setIsSubmitting(true);
+      
+      try {
+        // Get all questions from all pages to create a comprehensive mapping
+        const allQuestions = surveyData?.pages?.flatMap(page => page?.questions || []) || [];
+        const questionMap = allQuestions.reduce((acc, question) => {
+          acc[question.id] = question;
+          return acc;
+        }, {});
+
+        // Prepare the submission data with enhanced question metadata
+        const submissionData = {
+          formData,
+          surveyId: surveyData?.id,
+          surveyTitle: surveyData?.title,
+          submittedAt: new Date().toISOString(),
+          totalQuestions: allQuestions.length,
+          answeredQuestions: Object.keys(formData).filter(key => {
+            const value = formData[key];
+            return value && (typeof value === 'string' ? value.trim() !== '' : Array.isArray(value) ? value.length > 0 : true);
+          }).length,
+          // Enhanced question mapping with names
+          questions: allQuestions.map(question => ({
+            id: question.id,
+            name: question.name || question.id,
+            title: question.title,
+            type: question.type,
+            required: question.required,
+            answer: formData[question.id] || null,
+            answered: formData[question.id] && (
+              typeof formData[question.id] === 'string' 
+                ? formData[question.id].trim() !== '' 
+                : Array.isArray(formData[question.id]) 
+                  ? formData[question.id].length > 0 
+                  : true
+            )
+          })),
+          // Flattened answers with question names for easy processing
+          answers: Object.entries(formData).map(([questionId, answer]) => {
+            const question = questionMap[questionId];
+            return {
+              questionId,
+              questionName: question?.name || questionId,
+              questionTitle: question?.title || '',
+              questionType: question?.type || '',
+              answer,
+              answered: answer && (
+                typeof answer === 'string' 
+                  ? answer.trim() !== '' 
+                  : Array.isArray(answer) 
+                    ? answer.length > 0 
+                    : true
+              )
+            };
+          }).filter(item => item.answered)
+        };
+
+        if (onSubmit) {
+          // If onSubmit returns a promise, wait for it
+          const result = onSubmit(submissionData);
+          if (result && typeof result.then === 'function') {
+            await result;
+          }
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        // You could add error handling here, like showing a toast notification
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -118,6 +193,32 @@ const SurveyViewer = ({
         return true;
     }
   }, [formData]);
+
+  // Get submit button styles based on variant
+  const getSubmitButtonStyles = useCallback((variant) => {
+    const baseClasses = "px-6 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2";
+    
+    switch (variant) {
+      case "primary":
+        return `${baseClasses} bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500`;
+      case "secondary":
+        return `${baseClasses} bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500`;
+      case "success":
+        return `${baseClasses} bg-green-600 hover:bg-green-700 text-white focus:ring-green-500`;
+      case "warning":
+        return `${baseClasses} bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500`;
+      case "danger":
+        return `${baseClasses} bg-red-600 hover:bg-red-700 text-white focus:ring-red-500`;
+      case "outline":
+        return `${baseClasses} bg-transparent border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white focus:ring-blue-500`;
+      case "ghost":
+        return `${baseClasses} bg-transparent text-blue-600 hover:bg-blue-50 focus:ring-blue-500`;
+      case "custom":
+        return submitButton.className || `${baseClasses} bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500`;
+      default:
+        return submitButton.className || `${baseClasses} bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500`;
+    }
+  }, [submitButton.className]);
 
   // Render question based on type
   const renderQuestion = useCallback((question) => {
@@ -396,16 +497,21 @@ const SurveyViewer = ({
         <button
           type="button"
           onClick={handleNext}
+          disabled={currentPageIndex === totalPages - 1 ? (isSubmitting || submitButton.disabled) : false}
           className={cn(
             "px-6 py-2 rounded-md font-medium transition-colors survey-viewer-next-button",
             currentPageIndex === totalPages - 1
-              ? "bg-green-600 text-white hover:bg-green-700"
+              ? getSubmitButtonStyles(submitButton.variant)
               : "bg-blue-600 text-white hover:bg-blue-700",
-            customStyles?.button || ""
+            customStyles?.button || "",
+            (isSubmitting || submitButton.disabled) ? "opacity-50 cursor-not-allowed" : ""
           )}
           id="survey-viewer-next-button"
         >
-          {currentPageIndex === totalPages - 1 ? "Submit" : "Next"}
+          {currentPageIndex === totalPages - 1 
+            ? (isSubmitting ? submitButton.loadingLabel : submitButton.label)
+            : "Next"
+          }
         </button>
       </div>
     );
@@ -448,6 +554,25 @@ const SurveyViewer = ({
 
       {/* Navigation */}
       {renderNavigation()}
+
+      {/* Standalone Submit Button for Single Page Surveys */}
+      {totalPages <= 1 && currentPage?.questions && currentPage.questions.length > 0 && (
+        <div className="flex justify-center mt-8 p-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting || submitButton.disabled}
+            className={cn(
+              getSubmitButtonStyles(submitButton.variant),
+              "survey-viewer-submit-button px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200",
+              (isSubmitting || submitButton.disabled) ? "opacity-50 cursor-not-allowed" : ""
+            )}
+            id="survey-viewer-submit-button"
+          >
+            {isSubmitting ? submitButton.loadingLabel : submitButton.label}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

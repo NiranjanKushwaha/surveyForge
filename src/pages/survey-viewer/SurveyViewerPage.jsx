@@ -47,19 +47,27 @@ const SurveyViewerPage = () => {
   }, [surveyId]);
 
   // Handle form submission
-  const handleSubmit = (data) => {
-    setFormData(data);
+  const handleSubmit = (submissionData) => {
+    setFormData(submissionData);
     setIsSubmitted(true);
     
     // In real app, send data to your backend
-    console.log("Form submitted:", data);
+    console.log("Form submitted:", submissionData);
+    console.log("Form responses:", submissionData.formData);
+    console.log("Survey metadata:", {
+      surveyId: submissionData.surveyId,
+      surveyTitle: submissionData.surveyTitle,
+      totalQuestions: submissionData.totalQuestions,
+      answeredQuestions: submissionData.answeredQuestions,
+      submittedAt: submissionData.submittedAt
+    });
     
     // Example: Send to parent application if embedded
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({
         type: "SURVEY_SUBMITTED",
         surveyId,
-        data
+        data: submissionData
       }, "*");
     }
   };
@@ -113,12 +121,22 @@ const SurveyViewerPage = () => {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h1>
-          <p className="text-gray-600 mb-6">Your response has been submitted successfully.</p>
+          <p className="text-gray-600 mb-4">Your response has been submitted successfully.</p>
+          
+          {/* Display submission summary */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
+            <h3 className="font-semibold text-blue-900 mb-2">Submission Summary</h3>
+            <div className="space-y-1 text-sm text-blue-800">
+              <p><span className="font-medium">Survey:</span> {formData.surveyTitle}</p>
+              <p><span className="font-medium">Questions:</span> {formData.answeredQuestions} of {formData.totalQuestions} answered</p>
+              <p><span className="font-medium">Submitted:</span> {new Date(formData.submittedAt).toLocaleString()}</p>
+            </div>
+          </div>
           
           {/* Display submitted data for demo */}
           <details className="text-left">
             <summary className="cursor-pointer text-blue-600 hover:text-blue-800 font-medium">
-              View Submitted Data
+              View Full Response Data
             </summary>
             <pre className="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-40">
               {JSON.stringify(formData, null, 2)}
@@ -134,6 +152,11 @@ const SurveyViewerPage = () => {
       <SurveyViewer
         surveyData={surveyData}
         mode={mode}
+        submitButton={{
+          label: "Submit Survey",
+          variant: "primary",
+          className: "bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+        }}
         customStyles={customStyles}
         onSubmit={handleSubmit}
         onQuestionChange={handleQuestionChange}

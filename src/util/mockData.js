@@ -7,10 +7,11 @@ export const mockJSONData = {
     {
       id: "page_1",
       name: "General Information",
-      questionCount: 3,
+      questionCount: 4,
       questions: [
         {
           id: "q1",
+          name: "full_name",
           type: "text-input",
           icon: "Type",
           title: "What is your full name?",
@@ -23,7 +24,50 @@ export const mockJSONData = {
           },
         },
         {
+          id: "q_1755352913853",
+          name: "department",
+          type: "checkbox",
+          icon: "CheckSquare",
+          title: "SELECT DEPARTMENT",
+          description: "DEPT please",
+          required: true,
+          placeholder: "enter department",
+          options: [
+            {
+              id: "1755352958359",
+              label: "BSC",
+              value: "option_1"
+            },
+            {
+              id: "1755352967197",
+              label: "OPTION 3",
+              value: "option_2"
+            },
+            {
+              id: "1755352975460",
+              label: "best",
+              value: "option_3"
+            },
+            {
+              id: "1755352981639",
+              label: "Good",
+              value: "option_4"
+            }
+          ],
+          validation: {},
+          conditionalLogic: {
+            enabled: false,
+            dependsOn: "",
+            condition: "equals",
+            value: ""
+          },
+          logic: {
+            enabled: true
+          }
+        },
+        {
           id: "q2",
+          name: "email",
           type: "email",
           icon: "Mail",
           title: "What is your email address?",
@@ -32,6 +76,7 @@ export const mockJSONData = {
         },
         {
           id: "q3",
+          name: "hear_about_us",
           type: "radio",
           icon: "Circle",
           title: "How did you hear about us?",
@@ -73,6 +118,7 @@ export const mockJSONData = {
       questions: [
         {
           id: "q4",
+          name: "service_rating",
           type: "rating",
           icon: "Star",
           title: "How would you rate our service?",
@@ -81,6 +127,7 @@ export const mockJSONData = {
         },
         {
           id: "q5",
+          name: "improvements",
           type: "textarea",
           icon: "TextArea",
           title: "What can we improve?",
@@ -89,6 +136,7 @@ export const mockJSONData = {
         },
         {
           id: "q6",
+          name: "recommendation",
           type: "checkbox",
           icon: "CheckBox",
           title: "Would you recommend us to others?",
@@ -130,6 +178,7 @@ export const mockJSONData = {
       questions: [
         {
           id: "q7",
+          name: "contact_followup",
           type: "radio",
           icon: "Circle",
           title: "Would you like us to contact you for follow-up?",
@@ -149,6 +198,7 @@ export const mockJSONData = {
         },
         {
           id: "q8",
+          name: "contact_method",
           type: "text-input",
           icon: "Type",
           title: "What is your preferred contact method?",
