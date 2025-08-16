@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
-import { Checkbox } from '../../../components/ui/Checkbox';
+import Checkbox from "../../../components/ui/Checkbox";
 
 const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onToggleCollapse }) => {
   const [activeTab, setActiveTab] = useState('general');
@@ -41,11 +41,12 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-card border-l border-border flex flex-col items-center py-4">
+      <div id="properties-panel-collapsed" className="w-12 bg-card border-l border-border flex flex-col items-center py-4 properties-panel-collapsed">
         <button
           onClick={onToggleCollapse}
-          className="p-2 hover:bg-muted rounded-md survey-transition"
+          className="p-2 hover:bg-muted rounded-md survey-transition properties-panel-expand-button"
           title="Expand Properties Panel"
+          id="properties-panel-expand-button"
         >
           <Icon name="ChevronLeft" size={16} />
         </button>
@@ -55,18 +56,19 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
 
   if (!selectedQuestion) {
     return (
-      <div className="w-80 bg-card border-l border-border flex flex-col">
+      <div className="w-80 bg-card border-l border-border flex flex-col properties-panel-no-selection">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-sm font-semibold text-foreground">Properties</h2>
           <button
             onClick={onToggleCollapse}
-            className="p-1 hover:bg-muted rounded-md survey-transition"
+            className="p-1 hover:bg-muted rounded-md survey-transition properties-panel-collapse-button"
             title="Collapse Panel"
+            id="properties-panel-collapse-button"
           >
             <Icon name="ChevronRight" size={16} />
           </button>
         </div>
-        <div className="flex-1 flex items-center justify-center p-6">
+        <div id="properties-panel-no-selection-content" className="flex-1 flex items-center justify-center p-6">
           <div className="text-center">
             <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
               <Icon name="MousePointer" size={20} color="var(--color-text-secondary)" />
@@ -395,7 +397,7 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
   };
 
   return (
-    <div className="w-80 bg-card border-l border-border flex flex-col h-full">
+    <div id="properties-panel-container" className="w-80 bg-card border-l border-border flex flex-col h-full properties-panel-container">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center space-x-2">

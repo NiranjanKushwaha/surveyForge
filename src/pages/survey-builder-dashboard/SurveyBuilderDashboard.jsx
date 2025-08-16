@@ -30,8 +30,7 @@ const SurveyBuilderDashboard = () => {
       title: "Customer Satisfaction Survey Q4 2024",
       description:
         "Comprehensive survey to measure customer satisfaction levels across all product lines and identify areas for improvement.",
-      thumbnail:
-        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop",
+      thumbnail: "/assets/images/no_image.png",
       status: "published",
       responses: 1247,
       completionRate: 87,
@@ -43,8 +42,7 @@ const SurveyBuilderDashboard = () => {
       title: "Employee Engagement Assessment",
       description:
         "Annual employee engagement survey to understand workplace satisfaction, culture, and areas for organizational improvement.",
-      thumbnail:
-        "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?w=400&h=200&fit=crop",
+      thumbnail: "/assets/images/no_image.png",
       status: "draft",
       responses: 0,
       completionRate: 0,
@@ -56,8 +54,7 @@ const SurveyBuilderDashboard = () => {
       title: "Product Feature Feedback",
       description:
         "Gather user feedback on new product features and functionality to guide future development priorities.",
-      thumbnail:
-        "https://images.pixabay.com/photo/2016/11/29/06/18/home-office-1867761_1280.jpg?w=400&h=200&fit=crop",
+      thumbnail: "/assets/images/no_image.png",
       status: "published",
       responses: 892,
       completionRate: 92,
@@ -69,8 +66,7 @@ const SurveyBuilderDashboard = () => {
       title: "Market Research - Consumer Preferences",
       description:
         "In-depth market research survey to understand consumer preferences and buying behavior in our target demographic.",
-      thumbnail:
-        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
+      thumbnail: "/assets/images/no_image.png",
       status: "published",
       responses: 2156,
       completionRate: 78,
@@ -82,8 +78,7 @@ const SurveyBuilderDashboard = () => {
       title: "Event Feedback - Annual Conference",
       description:
         "Post-event survey to collect attendee feedback on the annual conference experience and suggestions for improvement.",
-      thumbnail:
-        "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?w=400&h=200&fit=crop",
+      thumbnail: "/assets/images/no_image.png",
       status: "closed",
       responses: 456,
       completionRate: 95,
@@ -95,8 +90,7 @@ const SurveyBuilderDashboard = () => {
       title: "Website Usability Study",
       description:
         "User experience survey to evaluate website usability, navigation, and overall user satisfaction with our digital platform.",
-      thumbnail:
-        "https://images.pixabay.com/photo/2016/11/29/20/22/computer-1869236_1280.jpg?w=400&h=200&fit=crop",
+      thumbnail: "/assets/images/no_image.png",
       status: "draft",
       responses: 0,
       completionRate: 0,
@@ -109,7 +103,7 @@ const SurveyBuilderDashboard = () => {
       description:
         "Comprehensive brand awareness and perception study to understand market positioning and brand recognition levels.",
       thumbnail:
-        "https://images.unsplash.com/photo-1553484771-371a605b060b?w=400&h=200&fit=crop",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbCqZD7iZhNTv0jbhlK_g_dys6PW4pBdhcOg&s",
       status: "published",
       responses: 1834,
       completionRate: 83,
@@ -122,7 +116,7 @@ const SurveyBuilderDashboard = () => {
       description:
         "Post-training survey to assess the effectiveness of our professional development programs and identify improvement areas.",
       thumbnail:
-        "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?w=400&h=200&fit=crop",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbCqZD7iZhNTv0jbhlK_g_dys6PW4pBdhcOg&s",
       status: "published",
       responses: 234,
       completionRate: 89,
@@ -259,7 +253,17 @@ const SurveyBuilderDashboard = () => {
                   location.
                 </p>
               </div>
-              <div className="mt-4 lg:mt-0">
+              <div className="mt-4 lg:mt-0 flex space-x-3">
+                <Link to="/demo-integration">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full lg:w-auto"
+                  >
+                    <Icon name="Eye" size={20} className="mr-2" />
+                    View Integration Demo
+                  </Button>
+                </Link>
                 <Link to="/visual-survey-builder">
                   <Button
                     variant="default"

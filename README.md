@@ -1,107 +1,326 @@
-# SurveyForge
+# SurveyForge 🚀
 
-A modern survey creation and management platform built with React, developed by Niranjan Kushwaha. This application provides comprehensive tools for creating, managing, and analyzing surveys using the latest frontend technologies.
+A powerful, integrable React-based survey management application that allows you to create, deploy, and analyze surveys with ease.
 
-## 🚀 Features
+## ✨ Features
 
-- **React 18** - React version with improved rendering and concurrent features
-- **Vite** - Lightning-fast build tool and development server
-- **Redux Toolkit** - State management with simplified Redux setup
-- **TailwindCSS** - Utility-first CSS framework with extensive customization
-- **React Router v6** - Declarative routing for React applications
-- **Data Visualization** - Integrated D3.js and Recharts for powerful data visualization
-- **Form Management** - React Hook Form for efficient form handling
-- **Animation** - Framer Motion for smooth UI animations
-- **Testing** - Jest and React Testing Library setup
+### 🎯 Core Functionality
+- **Visual Survey Builder** - Drag-and-drop interface for creating surveys
+- **Survey Viewer** - Responsive survey rendering with multiple display modes
+- **Conditional Logic** - Show/hide questions based on previous answers
+- **Multi-page Surveys** - Organize questions into logical pages
+- **Real-time Preview** - See changes as you build
 
-## 📋 Prerequisites
+### 🔧 Integration Capabilities
+- **Component Integration** - Use as a React component in your app
+- **URL-based Integration** - Navigate to survey URLs with parameters
+- **Iframe Support** - Embed surveys in any web application
+- **Custom Styling** - Fully customizable appearance
+- **Event Handling** - Track form submissions and question changes
 
-- Node.js (v14.x or higher)
+### 📱 Responsive Design
+- **Mobile-first** approach
+- **Cross-browser** compatibility
+- **Accessibility** features
+- **Touch-friendly** interface
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 16+ 
 - npm or yarn
 
-## 🛠️ Installation
+### Installation
 
-1. Install dependencies:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/surveyforge.git
+   cd surveyforge
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
-   # or
-   yarn install
    ```
-   
-2. Start the development server:
+
+3. **Start development server**
    ```bash
    npm start
-   # or
-   yarn start
    ```
 
-## 📁 Project Structure
+4. **Open your browser**
+   Navigate to `http://localhost:5173`
 
-```
-react_app/
-├── public/             # Static assets
-├── src/
-│   ├── components/     # Reusable UI components
-│   ├── pages/          # Page components
-│   ├── styles/         # Global styles and Tailwind configuration
-│   ├── App.jsx         # Main application component
-│   ├── Routes.jsx      # Application routes
-│   └── index.jsx       # Application entry point
-├── .env                # Environment variables
-├── index.html          # HTML template
-├── package.json        # Project dependencies and scripts
-├── tailwind.config.js  # Tailwind CSS configuration
-└── vite.config.js      # Vite configuration
-```
+## 📖 Usage
 
-## 🧩 Adding Routes
+### 1. Creating Surveys
 
-To add new routes to the application, update the `Routes.jsx` file:
+Navigate to the **Visual Survey Builder** to create surveys:
+
+- Drag and drop question types from the component library
+- Configure question properties in the properties panel
+- Add conditional logic to show/hide questions
+- Preview your survey in real-time
+- Export surveys as JSON
+
+### 2. Integrating Surveys
+
+#### Basic Component Integration
 
 ```jsx
-import { useRoutes } from "react-router-dom";
-import HomePage from "pages/HomePage";
-import AboutPage from "pages/AboutPage";
+import SurveyViewer from 'surveyforge/components/SurveyViewer';
 
-const ProjectRoutes = () => {
-  let element = useRoutes([
-    { path: "/", element: <HomePage /> },
-    { path: "/about", element: <AboutPage /> },
-    // Add more routes as needed
-  ]);
+function App() {
+  const surveyData = {
+    id: "my_survey",
+    title: "My Survey",
+    pages: [
+      {
+        id: "page1",
+        name: "Page 1",
+        questions: [
+          {
+            id: "q1",
+            type: "text-input",
+            title: "What's your name?",
+            required: true
+          }
+        ]
+      }
+    ]
+  };
 
-  return element;
-};
+  const handleSubmit = (data) => {
+    console.log('Survey submitted:', data);
+  };
+
+  return (
+    <SurveyViewer
+      surveyData={surveyData}
+      onSubmit={handleSubmit}
+    />
+  );
+}
 ```
 
-## 🎨 Styling
-
-This project uses Tailwind CSS for styling. The configuration includes:
-
-- Forms plugin for form styling
-- Typography plugin for text styling
-- Aspect ratio plugin for responsive elements
-- Container queries for component-specific responsive design
-- Fluid typography for responsive text
-- Animation utilities
-
-## 📱 Responsive Design
-
-The app is built with responsive design using Tailwind CSS breakpoints.
-
-
-## 📦 Deployment
-
-Build the application for production:
+#### URL-based Integration
 
 ```bash
-npm run build
+# Basic survey viewer
+/survey-viewer/survey_123
+
+# Form mode with custom styles
+/survey-viewer/survey_123?mode=form&styles={"input":"border-red-300"}
 ```
+
+#### Iframe Integration
+
+```html
+<iframe 
+  src="/survey-viewer/survey_123?mode=form" 
+  width="100%" 
+  height="600px"
+  frameborder="0">
+</iframe>
+```
+
+### 3. Customization
+
+#### Display Modes
+
+- **Survey Mode** (default): Shows descriptions and progress indicators
+- **Form Mode**: Clean, compact form layout
+
+```jsx
+<SurveyViewer
+  surveyData={surveyData}
+  mode="form"  // or "survey"
+  onSubmit={handleSubmit}
+/>
+```
+
+#### Custom Styling
+
+```jsx
+const customStyles = {
+  input: "border-2 border-blue-300 rounded-lg px-4 py-3",
+  label: "text-lg font-semibold text-blue-800 mb-3",
+  button: "bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg",
+  error: "text-red-700 font-medium"
+};
+
+<SurveyViewer
+  surveyData={surveyData}
+  customStyles={customStyles}
+  onSubmit={handleSubmit}
+/>
+```
+
+#### Conditional Questions
+
+```jsx
+{
+  id: "q2",
+  type: "text-input",
+  title: "How many children do you have?",
+  required: true,
+  conditionalLogic: {
+    enabled: true,
+    dependsOn: "q1",
+    condition: "equals",
+    value: "yes"
+  }
+}
+```
+
+## 🏗️ Project Structure
+
+```
+surveyforge/
+├── src/
+│   ├── components/
+│   │   ├── SurveyViewer.jsx          # Main survey viewer component
+│   │   └── ui/                       # Reusable UI components
+│   ├── pages/
+│   │   ├── survey-builder-dashboard/ # Dashboard for managing surveys
+│   │   ├── visual-survey-builder/    # Drag-and-drop survey builder
+│   │   ├── survey-viewer/            # Survey viewer page
+│   │   └── demo-integration/         # Integration examples
+│   ├── util/
+│   │   └── mockData.js               # Sample survey data and examples
+│   └── Routes.jsx                    # Application routing
+├── INTEGRATION_GUIDE.md              # Comprehensive integration guide
+└── README.md                         # This file
+```
+
+## 🎨 Available Question Types
+
+- **Text Input** - Single line text
+- **Email** - Email address input
+- **Textarea** - Multi-line text
+- **Radio Buttons** - Single selection
+- **Checkboxes** - Multiple selection
+- **Rating** - Numeric rating scale
+- **Dropdown** - Select from options
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+VITE_API_URL=http://localhost:3000/api
+VITE_APP_NAME=SurveyForge
+```
+
+### Build Configuration
+
+```bash
+# Development build
+npm run dev
+
+# Production build
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## 📱 Responsive Breakpoints
+
+- **Mobile**: < 768px
+- **Tablet**: 768px - 1024px
+- **Desktop**: > 1024px
+
+## 🚀 Deployment
+
+### Static Hosting (Netlify, Vercel, etc.)
+
+1. Build the project: `npm run build`
+2. Deploy the `dist` folder
+3. Configure redirects for SPA routing
+
+### Docker
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "run", "preview"]
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📚 Documentation
+
+- **[Integration Guide](./INTEGRATION_GUIDE.md)** - Complete integration documentation
+- **[API Reference](./docs/API.md)** - Component props and methods
+- **[Examples](./src/util/mockData.js)** - Code examples and sample data
+
+## 🧪 Testing
+
+```bash
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Survey not loading**: Check survey data structure
+2. **Styling not applied**: Verify customStyles object format
+3. **Conditional logic not working**: Check dependsOn field names
+4. **Build errors**: Ensure Node.js version is 16+
+
+### Debug Mode
+
+Enable debug logging:
+
+```jsx
+<SurveyViewer
+  surveyData={surveyData}
+  onSubmit={handleSubmit}
+  debug={true}
+/>
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- Developed by Niranjan Kushwaha
-- Powered by React and Vite
-- Styled with Tailwind CSS
+- Built with [React](https://reactjs.org/)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Icons from [Lucide React](https://lucide.dev/)
+- Built with [Vite](https://vitejs.dev/)
 
-© 2025 Niranjan Kushwaha. All rights reserved.
+## 📞 Support
+
+- **Documentation**: [Integration Guide](./INTEGRATION_GUIDE.md)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/surveyforge/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/surveyforge/discussions)
+
+---
+
+**Made with ❤️ for the developer community**
+
+If you find this project helpful, please give it a ⭐ star!

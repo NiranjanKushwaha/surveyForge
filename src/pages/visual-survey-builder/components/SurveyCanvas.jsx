@@ -81,6 +81,7 @@ const SurveyCanvas = ({
               ? "border-primary bg-primary/5"
               : "border-border hover:border-primary/50 hover:bg-muted/50"
           }`}
+          id={`survey-canvas-question-${question?.id}`}
         >
           {/* Drag Handle */}
           <div className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 survey-transition">
@@ -134,8 +135,9 @@ const SurveyCanvas = ({
                     e?.stopPropagation();
                     onQuestionDuplicate(question?.id);
                   }}
-                  className="p-1 hover:bg-muted rounded survey-transition"
+                  className="p-1 hover:bg-muted rounded survey-transition survey-canvas-duplicate-question-button"
                   title="Duplicate Question"
+                  id={`survey-canvas-duplicate-question-button-${question?.id}`}
                 >
                   <Icon name="Copy" size={14} />
                 </button>
@@ -144,7 +146,7 @@ const SurveyCanvas = ({
                     e?.stopPropagation();
                     onQuestionDelete(question?.id);
                   }}
-                  className="p-1 hover:bg-error/10 hover:text-error rounded survey-transition"
+                  className="p-1 hover:bg-error/10 hover:text-error rounded survey-transition survey-canvas-delete-question-button"
                   title="Delete Question"
                 >
                   <Icon name="Trash2" size={14} />
@@ -318,11 +320,12 @@ const SurveyCanvas = ({
               <button
                 key={star}
                 className={clsx(
-                  "transition-all duration-200",
+                  "transition-all duration-200 survey-canvas-star-rating-button",
                   previewMode === "form"
                     ? "p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full"
                     : "cursor-default"
                 )}
+                id={`survey-canvas-star-rating-button-${star}`}
                 disabled={previewMode !== "form"}
               >
                 <Icon
@@ -530,7 +533,7 @@ const SurveyCanvas = ({
   };
 
   return (
-    <div className="flex-1 bg-surface flex flex-col">
+    <div id="survey-canvas-container" className="flex-1 bg-surface flex flex-col survey-canvas-container">
       {/* Canvas Header */}
       <div className="bg-card border-b border-border p-4">
         <div className="flex items-center justify-between">
@@ -548,10 +551,12 @@ const SurveyCanvas = ({
               size="sm"
               iconName="Eye"
               onClick={onTogglePreview}
+              className="survey-canvas-preview-button"
+              id="survey-canvas-preview-button"
             >
               Preview
             </Button>
-            <Button variant="outline" size="sm" iconName="Settings">
+            <Button id="survey-canvas-settings-button" variant="outline" size="sm" iconName="Settings" className="survey-canvas-settings-button">
               Settings
             </Button>
           </div>
@@ -594,7 +599,7 @@ const SurveyCanvas = ({
 
       {isPreviewMode &&
         createPortal(
-          <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div id="survey-canvas-preview-container" className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="bg-card border border-border shadow-lg w-full h-full md:w-[90%] md:h-[90%] rounded-lg max-w-4xl overflow-hidden flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-border bg-surface">
                 <div>
@@ -609,7 +614,9 @@ const SurveyCanvas = ({
                   <Button
                     variant={previewMode === "default" ? "default" : "outline"}
                     size="sm"
+                    id="survey-canvas-preview-mode-default-button"
                     onClick={() => setPreviewMode("default")}
+                    className="survey-canvas-preview-mode-default-button"
                   >
                     <Icon name="Layout" size={16} className="mr-1" />
                     Default
@@ -617,7 +624,9 @@ const SurveyCanvas = ({
                   <Button
                     variant={previewMode === "form" ? "default" : "outline"}
                     size="sm"
+                    id="survey-canvas-preview-mode-form-button"
                     onClick={() => setPreviewMode("form")}
+                    className="survey-canvas-preview-mode-form-button"
                   >
                     <Icon name="FileText" size={16} className="mr-1" />
                     Form
@@ -637,7 +646,7 @@ const SurveyCanvas = ({
                 )}
               >
                 {surveyData?.questions?.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                  <div id="survey-canvas-preview-no-questions-content" className="flex flex-col items-center justify-center h-full text-center p-6">
                     <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4">
                       <Icon
                         name="FileQuestion"
@@ -654,7 +663,7 @@ const SurveyCanvas = ({
                     </p>
                   </div>
                 ) : (
-                  <form className="p-8">
+                  <form id="survey-canvas-preview-questions-form" className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
                       {surveyData?.questions?.map((question, index) => (
                         <div
@@ -669,7 +678,7 @@ const SurveyCanvas = ({
                             question?.type === "textarea" ? "md:col-span-2" : ""
                           )}
                         >
-                          <div className="space-y-4">
+                          <div id={`survey-canvas-preview-question-${question?.id}`} className="space-y-4">
                             <div className="flex justify-between items-start">
                               <div className="space-y-1.5">
                                 <label className="flex items-center gap-2 text-base font-medium text-foreground group">
@@ -686,7 +695,7 @@ const SurveyCanvas = ({
                                   </p>
                                 )}
                               </div>
-                              <span className="text-xs text-text-secondary px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded">
+                              <span id={`survey-canvas-preview-question-index-${index}`} className="text-xs text-text-secondary px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded">
                                 Q{index + 1}
                               </span>
                             </div>

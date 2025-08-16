@@ -50,7 +50,7 @@ const PageNavigation = ({
   const totalPages = pages?.length;
 
   return (
-    <div className="bg-card border-t border-border">
+    <div id="page-navigation-container" className="bg-card border-t border-border page-navigation-container">
       {/* Progress Indicator */}
       <div className="px-6 py-1 border-b border-border">
         <div className="flex items-center justify-between text-xs text-text-secondary">
@@ -133,8 +133,9 @@ const PageNavigation = ({
                         e?.stopPropagation();
                         startRename(page);
                       }}
-                      className="p-0.5 hover:bg-muted rounded text-text-secondary hover:text-foreground survey-transition"
+                      className="p-0.5 hover:bg-muted rounded text-text-secondary hover:text-foreground survey-transition page-navigation-rename-button"
                       title="Rename Page"
+                      id="page-navigation-rename-button"
                     >
                       <Icon name="Edit2" size={8} />
                     </button>
@@ -144,8 +145,9 @@ const PageNavigation = ({
                           e?.stopPropagation();
                           onPageDelete(page?.id);
                         }}
-                        className="p-0.5 hover:bg-error/10 hover:text-error rounded survey-transition"
+                        className="p-0.5 hover:bg-error/10 hover:text-error rounded survey-transition page-navigation-delete-button"
                         title="Delete Page"
+                        id="page-navigation-delete-button"
                       >
                         <Icon name="Trash2" size={8} />
                       </button>
@@ -184,8 +186,9 @@ const PageNavigation = ({
           ) : (
             <button
               onClick={() => setIsAddingPage(true)}
-              className="flex items-center space-x-1 px-2 py-1 text-text-secondary hover:text-foreground hover:bg-muted border border-dashed border-border hover:border-primary rounded-md survey-transition"
+              className="flex items-center space-x-1 px-2 py-1 text-text-secondary hover:text-foreground hover:bg-muted border border-dashed border-border hover:border-primary rounded-md survey-transition page-navigation-add-page-button"
               title="Add New Page"
+              id="page-navigation-add-page-button"
             >
               <Icon name="Plus" size={12} />
               <span className="text-xs font-medium">Add Page</span>
@@ -205,6 +208,8 @@ const PageNavigation = ({
             disabled={currentIndex === 0}
             iconName="ChevronLeft"
             title="Previous Page"
+            id="page-navigation-previous-page-button"
+            className="page-navigation-previous-page-button"
           />
 
           <Button
@@ -217,6 +222,8 @@ const PageNavigation = ({
             disabled={currentIndex === pages?.length - 1}
             iconName="ChevronRight"
             title="Next Page"
+            id="page-navigation-next-page-button"
+            className="page-navigation-next-page-button"
           />
         </div>
       </div>

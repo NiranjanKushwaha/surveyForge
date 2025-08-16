@@ -199,16 +199,16 @@ const VisualSurveyBuilder = () => {
       icon: component?.icon,
       title: `New ${component?.name}`,
       description: "",
-      placeholder: component?.description,
       required: false,
-      options: ["radio", "checkbox", "dropdown", "multi-select"]?.includes(
-        component?.id
-      )
-        ? [
-            { id: "opt1", label: "Option 1", value: "option_1" },
-            { id: "opt2", label: "Option 2", value: "option_2" },
-          ]
-        : undefined,
+      placeholder: "",
+      options: component?.defaultOptions || [],
+      validation: component?.defaultValidation || {},
+      conditionalLogic: {
+        enabled: false,
+        dependsOn: "",
+        condition: "equals",
+        value: "",
+      },
     };
 
     const newSurveyData = { ...surveyData };
@@ -216,150 +216,61 @@ const VisualSurveyBuilder = () => {
       (page) => page?.id === surveyData?.currentPageId
     );
 
-    if (insertIndex !== undefined && insertIndex !== null) {
-      newSurveyData?.pages?.[pageIndex]?.questions?.splice(
+    if (pageIndex !== -1) {
+      newSurveyData.pages[pageIndex].questions?.splice(
         insertIndex,
         0,
         newQuestion
       );
-    } else {
-      newSurveyData?.pages?.[pageIndex]?.questions?.push(newQuestion);
-    }
+      newSurveyData.pages[pageIndex].questionCount =
+        newSurveyData?.pages?.[pageIndex]?.questions?.length;
 
-    newSurveyData.pages[pageIndex].questionCount =
-      newSurveyData?.pages?.[pageIndex]?.questions?.length;
-
-    setSurveyData(newSurveyData);
-    addToHistory(newSurveyData);
-    setSelectedQuestionId(newQuestion?.id);
-  };
-
-  // Properties panel handlers
-  const handlePropertiesToggle = () => {
-    setIsPropertiesCollapsed(!isPropertiesCollapsed);
-  };
-
-  // Toolbar handlers
-  const handleUndo = () => {
-    if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1);
-      setSurveyData(history?.[historyIndex - 1]);
-      setSaveStatus("unsaved");
-    }
-  };
-
-  const handleRedo = () => {
-    if (historyIndex < history?.length - 1) {
-      setHistoryIndex(historyIndex + 1);
-      setSurveyData(history?.[historyIndex + 1]);
-      setSaveStatus("unsaved");
-    }
-  };
-
-  const handleSave = async () => {
-    setSaveStatus("saving");
-
-    // Simulate API call
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSaveStatus("saved");
-    } catch (error) {
-      setSaveStatus("error");
-    }
-  };
-
-  const handlePreview = () => {
-    setIsPreviewMode(!isPreviewMode);
-  };
-
-  const handleExportSurvey = () => {
-    const jsonString = JSON.stringify(surveyData, null, 2);
-    navigator.clipboard
-      .writeText(jsonString)
-      .then(() => {
-        // Toast message is handled by FloatingToolbar
-      })
-      .catch((err) => {
-        console.error("Failed to copy survey JSON: ", err);
-        alert("Failed to copy survey JSON."); // Fallback alert if copy fails
-      });
-  };
-
-  const handleImportJson = (jsonString) => {
-    try {
-      const importedData = JSON.parse(jsonString);
-      // Basic validation to ensure it's a survey structure
-      if (importedData.id && importedData.title && importedData.pages) {
-        setSurveyData(importedData);
-        addToHistory(importedData);
-        setSelectedQuestionId(null);
-        alert("Survey imported successfully!"); // Consider using a toast here too
-      } else {
-        alert("Invalid survey JSON structure.");
-      }
-    } catch (error) {
-      console.error("Error parsing imported JSON:", error);
-      alert("Error importing survey: Invalid JSON format.");
+      setSurveyData(newSurveyData);
+      addToHistory(newSurveyData);
+      setSelectedQuestionId(newQuestion?.id);
     }
   };
 
   // Page navigation handlers
-  const handlePageSelect = (pageId) => {
-    const newSurveyData = { ...surveyData, currentPageId: pageId };
+  const handlePageChange = (pageId) => {
+    const newSurveyData = { ...surveyData };
+    newSurveyData.currentPageId = pageId;
     setSurveyData(newSurveyData);
     setSelectedQuestionId(null);
   };
 
-  const handlePageAdd = (pageName) => {
+  const handleAddPage = () => {
     const newPage = {
       id: `page_${Date.now()}`,
-      name: pageName,
+      name: `Page ${(surveyData?.pages?.length || 0) + 1}`,
       questionCount: 0,
       questions: [],
     };
 
-    const newSurveyData = {
-      ...surveyData,
-      pages: [...surveyData?.pages, newPage],
-      currentPageId: newPage?.id,
-    };
+    const newSurveyData = { ...surveyData };
+    newSurveyData.pages?.push(newPage);
+    newSurveyData.currentPageId = newPage?.id;
 
     setSurveyData(newSurveyData);
     addToHistory(newSurveyData);
     setSelectedQuestionId(null);
   };
 
-  const handlePageDelete = (pageId) => {
+  const handleDeletePage = (pageId) => {
     if (surveyData?.pages?.length <= 1) return;
 
-    const newPages = surveyData?.pages?.filter((page) => page?.id !== pageId);
-    const newCurrentPageId =
-      surveyData?.currentPageId === pageId
-        ? newPages?.[0]?.id
-        : surveyData?.currentPageId;
+    const newSurveyData = { ...surveyData };
+    newSurveyData.pages = newSurveyData?.pages?.filter(
+      (page) => page?.id !== pageId
+    );
 
-    const newSurveyData = {
-      ...surveyData,
-      pages: newPages,
-      currentPageId: newCurrentPageId,
-    };
+    if (surveyData?.currentPageId === pageId) {
+      newSurveyData.currentPageId = newSurveyData?.pages?.[0]?.id;
+    }
 
     setSurveyData(newSurveyData);
     addToHistory(newSurveyData);
     setSelectedQuestionId(null);
-  };
-
-  const handlePageRename = (pageId, newName) => {
-    const newSurveyData = { ...surveyData };
-    const pageIndex = newSurveyData?.pages?.findIndex(
-      (page) => page?.id === pageId
-    );
-
-    if (pageIndex !== -1) {
-      newSurveyData.pages[pageIndex].name = newName;
-      setSurveyData(newSurveyData);
-      addToHistory(newSurveyData);
-    }
   };
 
   const handlePageReorder = (fromIndex, toIndex) => {
@@ -370,10 +281,96 @@ const VisualSurveyBuilder = () => {
     pages?.splice(toIndex, 0, movedPage);
 
     newSurveyData.pages = pages;
-
     setSurveyData(newSurveyData);
     addToHistory(newSurveyData);
   };
+
+  // Properties panel handlers
+  const handlePropertiesToggle = () => {
+    setIsPropertiesCollapsed(!isPropertiesCollapsed);
+  };
+
+  // Floating toolbar handlers
+  const handleSave = () => {
+    // Save survey data
+    setSaveStatus("saving");
+    setTimeout(() => {
+      setSaveStatus("saved");
+    }, 1000);
+  };
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setSurveyData(history[historyIndex - 1]);
+      setSaveStatus("unsaved");
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history?.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setSurveyData(history[historyIndex + 1]);
+      setSaveStatus("unsaved");
+    }
+  };
+
+  const handlePreview = () => {
+    setIsPreviewMode(prev => !prev);
+  };
+
+  const handleExport = () => {
+    const dataStr = JSON.stringify(surveyData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${surveyData?.title || "survey"}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (event) => {
+    const file = event?.target?.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e?.target?.result);
+          setSurveyData(importedData);
+          setHistory([importedData]);
+          setHistoryIndex(0);
+          setSaveStatus("unsaved");
+        } catch (error) {
+          console.error("Error parsing imported file:", error);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  // Initialize with empty survey if no data
+  useEffect(() => {
+    if (!surveyData || !surveyData?.pages || surveyData?.pages?.length === 0) {
+      const emptySurvey = {
+        id: `survey_${Date.now()}`,
+        title: "Untitled Survey",
+        description: "",
+        currentPageId: "page_1",
+        pages: [
+          {
+            id: "page_1",
+            name: "Page 1",
+            questionCount: 0,
+            questions: [],
+          },
+        ],
+      };
+      setSurveyData(emptySurvey);
+      setHistory([emptySurvey]);
+      setHistoryIndex(0);
+    }
+  }, []);
 
   const breadcrumbItems = [
     { label: "Dashboard", path: "/survey-builder-dashboard" },
@@ -403,6 +400,7 @@ const VisualSurveyBuilder = () => {
             onDragStart={handleDragStart}
             className="transition-all duration-300 ease-in-out"
           />
+          
           {/* Survey Canvas */}
           <SurveyCanvas
             surveyData={{
@@ -419,6 +417,7 @@ const VisualSurveyBuilder = () => {
             isPreviewMode={isPreviewMode}
             onTogglePreview={handlePreview}
           />
+          
           {/* Properties Panel */}
           <PropertiesPanel
             selectedQuestion={selectedQuestion}
@@ -435,10 +434,9 @@ const VisualSurveyBuilder = () => {
         <PageNavigation
           pages={surveyData?.pages}
           currentPageId={surveyData?.currentPageId}
-          onPageSelect={handlePageSelect}
-          onPageAdd={handlePageAdd}
-          onPageDelete={handlePageDelete}
-          onPageRename={handlePageRename}
+          onPageSelect={handlePageChange}
+          onPageAdd={handleAddPage}
+          onPageDelete={handleDeletePage}
           onPageReorder={handlePageReorder}
         />
       </div>
@@ -456,8 +454,8 @@ const VisualSurveyBuilder = () => {
           isPreviewMode={isPreviewMode}
           onTogglePreview={handlePreview}
           surveyData={surveyData}
-          onExportSurvey={handleExportSurvey}
-          onImportJson={handleImportJson}
+          onExportSurvey={handleExport}
+          onImportJson={handleImport}
         />
       </div>
     </div>

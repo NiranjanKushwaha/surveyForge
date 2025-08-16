@@ -100,7 +100,7 @@ const FloatingToolbar = ({
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+      <div id="floating-toolbar-container" className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 floating-toolbar-container">
         <div className="bg-card border border-border rounded-lg survey-shadow-lg">
           {/* Main Toolbar */}
           <div className="flex items-center space-x-1 p-2">
@@ -113,6 +113,8 @@ const FloatingToolbar = ({
                 disabled={!canUndo}
                 iconName="Undo2"
                 title="Undo (Ctrl+Z)"
+                className="floating-toolbar-undo-button"
+                id="floating-toolbar-undo-button"
               />
               <Button
                 variant="ghost"
@@ -121,6 +123,8 @@ const FloatingToolbar = ({
                 disabled={!canRedo}
                 iconName="Redo2"
                 title="Redo (Ctrl+Y)"
+                className="floating-toolbar-redo-button"
+                id="floating-toolbar-redo-button"
               />
             </div>
 
@@ -148,6 +152,8 @@ const FloatingToolbar = ({
               onClick={onTogglePreview}
               iconName="Eye"
               title="Toggle Preview Mode"
+              className="floating-toolbar-preview-button"
+              id="floating-toolbar-preview-button"
             >
               {isPreviewMode ? "Exit Preview" : "Preview"}
             </Button>
@@ -160,6 +166,8 @@ const FloatingToolbar = ({
                 onClick={() => setIsExpanded(!isExpanded)}
                 iconName="MoreHorizontal"
                 title="More Actions"
+                className="floating-toolbar-more-actions-button"
+                id="floating-toolbar-more-actions-button"
               />
 
               {/* Expanded Menu */}
@@ -171,7 +179,8 @@ const FloatingToolbar = ({
                         onSave();
                         setIsExpanded(false);
                       }}
-                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2"
+                      id="floating-toolbar-save-button"
+                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-save-button"
                     >
                       <Icon name="Save" size={14} />
                       <span>Save Survey</span>
@@ -186,7 +195,8 @@ const FloatingToolbar = ({
                         setIsExpanded(false);
                         showToast("Survey JSON copied to clipboard!"); // Show toast
                       }}
-                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2"
+                      id="floating-toolbar-copy-json-button"
+                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-copy-json-button"
                     >
                       <Icon name="Copy" size={14} />{" "}
                       {/* Changed icon to Copy */}
@@ -195,7 +205,8 @@ const FloatingToolbar = ({
 
                     <button
                       onClick={handleOpenImportModal} // Call function to open import modal
-                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2"
+                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-import-button"
+                      id="floating-toolbar-import-button"
                     >
                       <Icon name="Upload" size={14} />
                       <span>Import Survey</span>
@@ -204,7 +215,8 @@ const FloatingToolbar = ({
                     {/* View JSON Button */}
                     <button
                       onClick={handleShowJson}
-                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2"
+                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-view-json-button"
+                      id="floating-toolbar-view-json-button"
                     >
                       <Icon name="Code" size={14} />
                       <span>View Survey JSON</span>
@@ -214,7 +226,8 @@ const FloatingToolbar = ({
 
                     <button
                       onClick={() => setIsExpanded(false)}
-                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2"
+                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-help-button"
+                      id="floating-toolbar-help-button"
                     >
                       <Icon name="HelpCircle" size={14} />
                       <span>Help & Shortcuts</span>
@@ -264,6 +277,8 @@ const FloatingToolbar = ({
                   variant="ghost"
                   size="icon"
                   onClick={handleCloseJsonModal}
+                  className="floating-toolbar-close-json-modal-button"
+                  id="floating-toolbar-close-json-modal-button"
                 >
                   <Icon name="X" size={20} />
                 </Button>
@@ -279,7 +294,7 @@ const FloatingToolbar = ({
                 <span className="text-sm text-text-secondary">
                   {copyStatus}
                 </span>
-                <Button onClick={handleCopyJson} iconName="Copy">
+                <Button onClick={handleCopyJson} iconName="Copy" className="floating-toolbar-copy-json-modal-button" id="floating-toolbar-copy-json-modal-button">
                   Copy JSON
                 </Button>
               </div>
@@ -301,6 +316,8 @@ const FloatingToolbar = ({
                   variant="ghost"
                   size="icon"
                   onClick={handleCloseImportModal}
+                  id="floating-toolbar-close-import-modal-button"
+                  className="floating-toolbar-close-import-modal-button"
                 >
                   <Icon name="X" size={20} />
                 </Button>
@@ -314,7 +331,7 @@ const FloatingToolbar = ({
                 />
               </div>
               <div className="p-4 border-t border-border text-right">
-                <Button onClick={handleImportSubmit} iconName="Upload">
+                <Button id="floating-toolbar-import-modal-button" onClick={handleImportSubmit} iconName="Upload" className="floating-toolbar-import-modal-button">
                   Import Survey
                 </Button>
               </div>

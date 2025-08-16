@@ -2,6 +2,7 @@ export const mockJSONData = {
   id: "survey_001",
   title: "Customer Satisfaction Survey",
   description: "Help us improve our services by sharing your feedback",
+  currentPageId: "page_1",
   pages: [
     {
       id: "page_1",
@@ -68,7 +69,7 @@ export const mockJSONData = {
     {
       id: "page_2",
       name: "Feedback",
-      questionCount: 2,
+      questionCount: 3,
       questions: [
         {
           id: "q4",
@@ -86,13 +87,6 @@ export const mockJSONData = {
           placeholder: "Share your suggestions...",
           required: false,
         },
-      ],
-    },
-    {
-      id: "page_3",
-      name: "Final Thoughts",
-      questionCount: 1,
-      questions: [
         {
           id: "q6",
           type: "checkbox",
@@ -103,22 +97,212 @@ export const mockJSONData = {
             {
               id: "opt1",
               label: "Yes, definitely",
-              value: "yes",
+              value: "yes_definitely",
             },
             {
               id: "opt2",
-              label: "Maybe",
-              value: "maybe",
+              label: "Yes, probably",
+              value: "yes_probably",
             },
             {
               id: "opt3",
-              label: "No, not really",
-              value: "no",
+              label: "Not sure",
+              value: "not_sure",
+            },
+            {
+              id: "opt4",
+              label: "No, probably not",
+              value: "no_probably_not",
+            },
+            {
+              id: "opt5",
+              label: "No, definitely not",
+              value: "no_definitely_not",
             },
           ],
         },
       ],
     },
+    {
+      id: "page_3",
+      name: "Follow-up Questions",
+      questionCount: 2,
+      questions: [
+        {
+          id: "q7",
+          type: "radio",
+          icon: "Circle",
+          title: "Would you like us to contact you for follow-up?",
+          required: false,
+          options: [
+            {
+              id: "opt1",
+              label: "Yes, please contact me",
+              value: "yes_contact",
+            },
+            {
+              id: "opt2",
+              label: "No, thank you",
+              value: "no_thanks",
+            },
+          ],
+        },
+        {
+          id: "q8",
+          type: "text-input",
+          icon: "Type",
+          title: "What is your preferred contact method?",
+          description: "Please specify how you'd like to be contacted",
+          placeholder: "Phone, email, or other...",
+          required: false,
+          conditionalLogic: {
+            enabled: true,
+            dependsOn: "q7",
+            condition: "equals",
+            value: "yes_contact",
+          },
+        },
+      ],
+    },
   ],
-  currentPageId: "page_1",
+};
+
+// Example of how to use the SurveyViewer component
+export const integrationExamples = {
+  // Basic integration
+  basic: `
+import SurveyViewer from './components/SurveyViewer';
+
+function App() {
+  const surveyData = {
+    id: "my_survey",
+    title: "My Survey",
+    description: "A simple survey",
+    pages: [
+      {
+        id: "page1",
+        name: "Page 1",
+        questions: [
+          {
+            id: "q1",
+            type: "text-input",
+            title: "What's your name?",
+            required: true
+          }
+        ]
+      }
+    ]
+  };
+
+  const handleSubmit = (data) => {
+    console.log('Survey submitted:', data);
+  };
+
+  return (
+    <SurveyViewer
+      surveyData={surveyData}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+  `,
+
+  // Form mode integration
+  formMode: `
+import SurveyViewer from './components/SurveyViewer';
+
+function App() {
+  const surveyData = { /* your survey data */ };
+
+  return (
+    <SurveyViewer
+      surveyData={surveyData}
+      mode="form"
+      onSubmit={handleSubmit}
+    />
+  );
+}
+  `,
+
+  // Custom styles integration
+  customStyles: `
+import SurveyViewer from './components/SurveyViewer';
+
+function App() {
+  const customStyles = {
+    input: "border-2 border-blue-300 rounded-lg px-4 py-3",
+    label: "text-lg font-semibold text-blue-800 mb-3",
+    button: "bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg",
+    error: "text-red-700 font-medium"
+  };
+
+  return (
+    <SurveyViewer
+      surveyData={surveyData}
+      customStyles={customStyles}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+  `,
+
+  // URL-based integration
+  urlIntegration: `
+// Embed in iframe or navigate to:
+// /survey-viewer/survey_123?mode=form&styles={"input":"border-red-300","button":"bg-red-600"}
+
+// Or use as a component with URL parameters:
+function App() {
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode') || 'survey';
+  const customStyles = JSON.parse(searchParams.get('styles') || '{}');
+
+  return (
+    <SurveyViewer
+      surveyData={surveyData}
+      mode={mode}
+      customStyles={customStyles}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+  `,
+
+  // Conditional questions example
+  conditionalExample: `
+const surveyWithConditionals = {
+  id: "conditional_survey",
+  title: "Conditional Survey",
+  pages: [
+    {
+      id: "page1",
+      name: "Page 1",
+      questions: [
+        {
+          id: "q1",
+          type: "radio",
+          title: "Do you have children?",
+          required: true,
+          options: [
+            { id: "opt1", label: "Yes", value: "yes" },
+            { id: "opt2", label: "No", value: "no" }
+          ]
+        },
+        {
+          id: "q2",
+          type: "text-input",
+          title: "How many children do you have?",
+          required: true,
+          conditionalLogic: {
+            enabled: true,
+            dependsOn: "q1",
+            condition: "equals",
+            value: "yes"
+          }
+        }
+      ]
+    }
+  ]
+};
+  `
 };
