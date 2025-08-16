@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { createPortal } from "react-dom";
+import { clsx } from "clsx";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
-import QuestionRenderer from "../../survey-runtime-renderer/components/QuestionRenderer";
 
 const SurveyCanvas = ({
   surveyData,
@@ -17,6 +17,7 @@ const SurveyCanvas = ({
   onTogglePreview,
 }) => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [previewMode, setPreviewMode] = useState("default");
   const canvasRef = useRef(null);
 
   const handleDragOver = (e) => {
@@ -178,16 +179,24 @@ const SurveyCanvas = ({
   };
 
   const renderQuestionPreview = (question) => {
+    const inputClasses = clsx(
+      "w-full transition-all duration-200",
+      previewMode === "form"
+        ? "px-4 py-3 border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        : "px-3 py-2 border-border rounded-md",
+      "border bg-background text-foreground placeholder:text-text-secondary"
+    );
+
     switch (question?.type) {
       case "text-input":
       case "email":
       case "number":
         return (
           <input
-            type="text"
+            type={question?.type === "number" ? "number" : "text"}
             placeholder={question?.placeholder || "Your answer..."}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
-            disabled
+            className={inputClasses}
+            disabled={previewMode !== "form"}
           />
         );
 
@@ -195,27 +204,41 @@ const SurveyCanvas = ({
         return (
           <textarea
             placeholder={question?.placeholder || "Your answer..."}
-            rows={3}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground resize-none"
-            disabled
+            rows={4}
+            className={clsx(inputClasses, "resize-none min-h-[100px]")}
+            disabled={previewMode !== "form"}
           />
         );
 
       case "radio":
         return (
-          <div className="space-y-2">
+          <div className={clsx("space-y-3", previewMode === "form" && "mt-2")}>
             {question?.options?.map((option, index) => (
               <label
                 key={index}
-                className="flex items-center space-x-2 cursor-pointer"
+                className={clsx(
+                  "flex items-center gap-3 cursor-pointer",
+                  previewMode === "form" &&
+                    "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                )}
               >
                 <input
                   type="radio"
                   name={`preview-${question?.id}`}
-                  disabled
-                  className="text-primary"
+                  disabled={previewMode !== "form"}
+                  className={clsx(
+                    "text-primary",
+                    previewMode === "form" && "h-5 w-5"
+                  )}
                 />
-                <span className="text-sm text-foreground">{option?.label}</span>
+                <span
+                  className={clsx(
+                    "text-foreground",
+                    previewMode === "form" ? "text-base" : "text-sm"
+                  )}
+                >
+                  {option?.label}
+                </span>
               </label>
             )) || (
               <div className="text-sm text-text-secondary italic">
@@ -227,14 +250,32 @@ const SurveyCanvas = ({
 
       case "checkbox":
         return (
-          <div className="space-y-2">
+          <div className={clsx("space-y-3", previewMode === "form" && "mt-2")}>
             {question?.options?.map((option, index) => (
               <label
                 key={index}
-                className="flex items-center space-x-2 cursor-pointer"
+                className={clsx(
+                  "flex items-center gap-3 cursor-pointer",
+                  previewMode === "form" &&
+                    "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                )}
               >
-                <input type="checkbox" disabled className="text-primary" />
-                <span className="text-sm text-foreground">{option?.label}</span>
+                <input
+                  type="checkbox"
+                  disabled={previewMode !== "form"}
+                  className={clsx(
+                    "text-primary rounded",
+                    previewMode === "form" && "h-5 w-5"
+                  )}
+                />
+                <span
+                  className={clsx(
+                    "text-foreground",
+                    previewMode === "form" ? "text-base" : "text-sm"
+                  )}
+                >
+                  {option?.label}
+                </span>
               </label>
             )) || (
               <div className="text-sm text-text-secondary italic">
@@ -247,10 +288,16 @@ const SurveyCanvas = ({
       case "dropdown":
         return (
           <select
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
-            disabled
+            className={clsx(
+              inputClasses,
+              "appearance-none bg-no-repeat bg-[right_1rem_center] pr-10",
+              previewMode === "form"
+                ? "bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNCA2TDggMTBMMTIgNiIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')]"
+                : ""
+            )}
+            disabled={previewMode !== "form"}
           >
-            <option>Select an option...</option>
+            <option value="">Select an option...</option>
             {question?.options?.map((option, index) => (
               <option key={index} value={option?.value}>
                 {option?.label}
@@ -261,35 +308,96 @@ const SurveyCanvas = ({
 
       case "star-rating":
         return (
-          <div className="flex items-center space-x-1">
+          <div
+            className={clsx(
+              "flex items-center gap-2",
+              previewMode === "form" && "mt-2"
+            )}
+          >
             {[1, 2, 3, 4, 5]?.map((star) => (
-              <Icon
+              <button
                 key={star}
-                name="Star"
-                size={20}
-                color="var(--color-border)"
-              />
+                className={clsx(
+                  "transition-all duration-200",
+                  previewMode === "form"
+                    ? "p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full"
+                    : "cursor-default"
+                )}
+                disabled={previewMode !== "form"}
+              >
+                <Icon
+                  name="Star"
+                  size={previewMode === "form" ? 24 : 20}
+                  className="text-zinc-300 hover:text-yellow-400 transition-colors"
+                />
+              </button>
             ))}
           </div>
         );
 
       case "likert":
         return (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-text-secondary">
-              Strongly Disagree
-            </span>
-            <div className="flex space-x-2">
+          <div
+            className={clsx(
+              previewMode === "form"
+                ? "bg-zinc-50 dark:bg-zinc-900 p-6 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                : ""
+            )}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span
+                className={clsx(
+                  "text-text-secondary",
+                  previewMode === "form" ? "text-sm" : "text-xs"
+                )}
+              >
+                Strongly Disagree
+              </span>
+              <span
+                className={clsx(
+                  "text-text-secondary",
+                  previewMode === "form" ? "text-sm" : "text-xs"
+                )}
+              >
+                Strongly Agree
+              </span>
+            </div>
+            <div className="flex justify-between gap-2">
               {[1, 2, 3, 4, 5]?.map((point) => (
-                <input
+                <label
                   key={point}
-                  type="radio"
-                  name={`likert-${question?.id}`}
-                  disabled
-                />
+                  className={clsx(
+                    "flex-1 text-center",
+                    previewMode === "form" && "cursor-pointer"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={`likert-${question?.id}`}
+                    value={point}
+                    disabled={!previewMode === "form"}
+                    className={clsx("sr-only")}
+                  />
+                  <div
+                    className={clsx(
+                      "mx-auto mb-2 flex items-center justify-center",
+                      previewMode === "form"
+                        ? "w-12 h-12 rounded-full border-2 border-zinc-200 dark:border-zinc-700 hover:border-primary hover:bg-primary/5 transition-colors"
+                        : "w-8 h-8"
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        "font-medium",
+                        previewMode === "form" ? "text-lg" : "text-sm"
+                      )}
+                    >
+                      {point}
+                    </span>
+                  </div>
+                </label>
               ))}
             </div>
-            <span className="text-xs text-text-secondary">Strongly Agree</span>
           </div>
         );
 
@@ -307,37 +415,85 @@ const SurveyCanvas = ({
           question?.type === "matrix-single" ? "radio" : "checkbox";
 
         return (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border">
+          <div
+            className={clsx(
+              "overflow-x-auto",
+              previewMode === "form" && "-mx-6"
+            )}
+          >
+            <table
+              className={clsx(
+                "min-w-full",
+                previewMode === "form"
+                  ? "border-separate border-spacing-0"
+                  : "divide-y divide-border"
+              )}
+            >
               <thead>
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"></th>
+                  <th
+                    className={clsx(
+                      "text-left font-medium text-text-secondary uppercase tracking-wider",
+                      previewMode === "form"
+                        ? "px-6 py-4 text-sm"
+                        : "px-4 py-2 text-xs"
+                    )}
+                  ></th>
                   {columns?.map((col) => (
                     <th
                       key={col?.id}
-                      className="px-4 py-2 text-center text-xs font-medium text-text-secondary uppercase tracking-wider"
+                      className={clsx(
+                        "text-center font-medium text-text-secondary uppercase tracking-wider",
+                        previewMode === "form"
+                          ? "px-6 py-4 text-sm"
+                          : "px-4 py-2 text-xs"
+                      )}
                     >
                       {col?.label}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody
+                className={clsx(
+                  previewMode === "form"
+                    ? "divide-y divide-zinc-200 dark:divide-zinc-700"
+                    : "divide-y divide-border"
+                )}
+              >
                 {rows?.map((row) => (
                   <tr key={row?.id}>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-foreground">
+                    <td
+                      className={clsx(
+                        "whitespace-nowrap font-medium text-foreground",
+                        previewMode === "form"
+                          ? "px-6 py-4 text-base"
+                          : "px-4 py-2 text-sm"
+                      )}
+                    >
                       {row?.label}
                     </td>
                     {columns?.map((col) => (
                       <td
                         key={col?.id}
-                        className="px-4 py-2 whitespace-nowrap text-center"
+                        className={clsx(
+                          "whitespace-nowrap text-center",
+                          previewMode === "form" ? "px-6 py-4" : "px-4 py-2"
+                        )}
                       >
                         <input
                           type={inputType}
                           name={`matrix-${question?.id}-${row?.id}`}
-                          disabled
-                          className="text-primary"
+                          disabled={previewMode !== "form"}
+                          className={clsx(
+                            "text-primary",
+                            previewMode === "form" &&
+                              inputType === "checkbox" &&
+                              "rounded h-5 w-5",
+                            previewMode === "form" &&
+                              inputType === "radio" &&
+                              "h-5 w-5"
+                          )}
                         />
                       </td>
                     ))}
@@ -349,7 +505,7 @@ const SurveyCanvas = ({
               question?.rows?.length === 0 ||
               !question?.columns ||
               question?.columns?.length === 0) && (
-              <div className="text-sm text-text-secondary italic mt-2 text-center">
+              <div className="text-sm text-text-secondary italic mt-4 text-center">
                 No rows or columns configured. Showing example.
               </div>
             )}
@@ -439,39 +595,124 @@ const SurveyCanvas = ({
       {isPreviewMode &&
         createPortal(
           <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-card border border-border shadow-lg w-full h-full rounded-none max-w-full max-h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="text-xl font-semibold text-foreground">
-                  Survey Preview: {surveyData?.title}
-                </h2>
-                <Button variant="ghost" size="icon" onClick={onTogglePreview}>
-                  <Icon name="X" size={20} />
-                </Button>
+            <div className="bg-card border border-border shadow-lg w-full h-full md:w-[90%] md:h-[90%] rounded-lg max-w-4xl overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-border bg-surface">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {surveyData?.title}
+                  </h2>
+                  <p className="text-sm text-text-secondary mt-1">
+                    {surveyData?.description}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={previewMode === "default" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPreviewMode("default")}
+                  >
+                    <Icon name="Layout" size={16} className="mr-1" />
+                    Default
+                  </Button>
+                  <Button
+                    variant={previewMode === "form" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPreviewMode("form")}
+                  >
+                    <Icon name="FileText" size={16} className="mr-1" />
+                    Form
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={onTogglePreview}>
+                    <Icon name="X" size={20} />
+                  </Button>
+                </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+              <div
+                className={clsx(
+                  "flex-1 overflow-y-auto",
+                  previewMode === "form"
+                    ? "bg-white dark:bg-zinc-900"
+                    : "bg-background"
+                )}
+              >
                 {surveyData?.questions?.length === 0 ? (
-                  <div className="text-center text-text-secondary">
-                    No questions to preview. Add some questions to your survey.
+                  <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                    <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4">
+                      <Icon
+                        name="FileQuestion"
+                        size={24}
+                        className="text-text-secondary"
+                      />
+                    </div>
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      No Questions Yet
+                    </h3>
+                    <p className="text-text-secondary max-w-md">
+                      Add some questions to your survey to preview how it will
+                      look.
+                    </p>
                   </div>
                 ) : (
-                  surveyData?.questions?.map((question) => (
-                    <div
-                      key={question?.id}
-                      className="bg-surface border border-border rounded-md p-3"
-                    >
-                      <h3 className="text-lg font-medium text-foreground mb-2">
-                        {question?.title}
-                      </h3>
-                      <div className="space-y-2">
-                        {renderQuestionPreview(question)}
-                      </div>
+                  <form className="p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
+                      {surveyData?.questions?.map((question, index) => (
+                        <div
+                          key={question?.id}
+                          className={clsx(
+                            "relative group",
+                            question?.type === "matrix-single" ||
+                              question?.type === "matrix-multiple"
+                              ? "col-span-full"
+                              : "",
+                            question?.type === "likert" ? "md:col-span-2" : "",
+                            question?.type === "textarea" ? "md:col-span-2" : ""
+                          )}
+                        >
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-1.5">
+                                <label className="flex items-center gap-2 text-base font-medium text-foreground group">
+                                  {question?.title}
+                                  {question?.required && (
+                                    <span className="text-error font-normal text-sm bg-error/10 px-2 py-0.5 rounded">
+                                      Required
+                                    </span>
+                                  )}
+                                </label>
+                                {question?.description && (
+                                  <p className="text-sm text-text-secondary">
+                                    {question?.description}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="text-xs text-text-secondary px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded">
+                                Q{index + 1}
+                              </span>
+                            </div>
+                            {renderQuestionPreview(question)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))
+                  </form>
                 )}
               </div>
-              <div className="p-4 border-t border-border text-right">
-                <Button onClick={onTogglePreview}>Close Preview</Button>
-              </div>
+
+              {previewMode === "form" && surveyData?.questions?.length > 0 && (
+                <div className="p-4 border-t border-border bg-surface">
+                  <div className="flex items-center justify-between max-w-2xl mx-auto">
+                    <Button variant="outline" size="lg">
+                      <Icon name="ArrowLeft" size={16} className="mr-2" />
+                      Previous
+                    </Button>
+                    <Button size="lg">
+                      Next
+                      <Icon name="ArrowRight" size={16} className="ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>,
           document.body

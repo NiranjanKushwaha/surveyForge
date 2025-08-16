@@ -1,0 +1,169 @@
+# Cursor Rules Configuration
+# This file defines cursor behavior and coding standards for the SurveyForge application
+
+# Project Structure Rules
+exclude:
+  - dist/
+  - build/
+  - .next/
+  - out/
+  
+  # Development files
+  - node_modules/
+  - coverage/
+  - .git/
+  - .husky/
+  
+  # Cache directories
+  - .cache/
+  - .eslintcache
+  
+  # Environment and configuration files
+  - .env*
+  - .env.local
+  - .env.development
+  - .env.production
+  
+  # Log files
+  - *.log
+  - npm-debug.log*
+  - yarn-debug.log*
+  - yarn-error.log*
+
+# Project-Specific Rules
+rules:
+  coding_standards:
+    - "Always write code that is simple to understand"
+    - "Ensure all components are fully responsive"
+    - "Use flexbox or grid for layout"
+    - "Use semantic HTML elements for better accessibility"
+    - "Follow WAI-ARIA accessibility guidelines"
+    
+  component_guidelines:
+    - "Use icons from lucide-react"
+    - "All form inputs must have unique className and name attributes"
+    - "Ensure proper keyboard navigation"
+    - "Handle loading, error, and empty states gracefully"
+    
+  styling_rules:
+    - "Use Tailwind classes for styling"
+    - "Avoid inline styles unless absolutely necessary"
+    - "Maintain consistent spacing using Tailwind scale"
+  
+  # Configuration files
+  - package.json
+  - tsconfig.json
+  - vite.config.js
+  - tailwind.config.js
+  
+  # Documentation
+  - README.md
+  - docs/**/*.md
+
+# Watch rules - Define how to track changes
+watch:
+  # React components
+  - pattern: src/**/*.jsx
+    description: "Track changes in React component files"
+    extensions: [.jsx, .tsx]
+    
+  # State management
+  - pattern: src/**/context/*.{js,jsx}
+    description: "Monitor state management and context changes"
+    priority: high
+    
+  # Utility functions
+  - pattern: src/utils/*.{js,ts}
+    description: "Track changes in utility functions"
+    
+  # Styles
+  - pattern: src/**/*.{css,scss}
+    description: "Monitor styling changes"
+    
+  # Configuration
+  - pattern: "*.config.{js,ts}"
+    description: "Track configuration file changes"
+    priority: medium
+
+# Focus rules - Define areas that need special attention
+focus:
+  # Survey builder components
+  - pattern: src/pages/visual-survey-builder/**/*
+    description: "Core survey builder functionality"
+    priority: high
+    
+  # Form components
+  - pattern: src/components/ui/**/*
+    description: "Reusable UI components"
+    priority: medium
+    
+  # Question management
+  - pattern: src/pages/question-library-manager/**/*
+    description: "Question library functionality"
+    priority: medium
+
+# Ignore rules - Specific files or patterns to ignore within included directories
+ignore:
+  # Test files
+  - pattern: "**/*.test.{js,jsx,ts,tsx}"
+    description: "Ignore test files for cursor tracking"
+    
+  # Story files (Storybook)
+  - pattern: "**/*.stories.{js,jsx,ts,tsx}"
+    description: "Ignore Storybook story files"
+    
+  # Generated files
+  - pattern: "**/*.generated.*"
+    description: "Ignore generated files"
+
+# Performance rules - Define cursor behavior for large files
+performance:
+  # Large file handling
+  maxFileSize: 500KB
+  debounceTime: 250ms
+  
+  # Chunk processing
+  chunkSize: 100KB
+  processingDelay: 50ms
+
+# Syntax highlighting rules
+syntax:
+  # JSX/TSX specific
+  jsx:
+    trackComponents: true
+    trackHooks: true
+    trackProps: true
+    
+  # CSS/SCSS specific
+  styles:
+    trackSelectors: true
+    trackMediaQueries: true
+    
+  # JavaScript/TypeScript
+  script:
+    trackFunctions: true
+    trackClasses: true
+    trackInterfaces: true
+
+# Collaboration rules - Define cursor behavior for multi-user editing
+collaboration:
+  # Cursor visibility
+  showRemoteCursors: true
+  cursorUpdateInterval: 100ms
+  
+  # Conflict resolution
+  conflictResolutionStrategy: "last-write-wins"
+  lockTimeout: 5000ms
+
+# Editor integration rules
+editor:
+  # VSCode specific settings
+  vscode:
+    highlightCurrentLine: true
+    scrollBeyondLastLine: false
+    cursorBlinking: "smooth"
+    cursorStyle: "line"
+    
+  # Navigation
+  smoothScrolling: true
+  cursorSurroundingLines: 3
