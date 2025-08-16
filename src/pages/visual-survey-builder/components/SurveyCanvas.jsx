@@ -174,6 +174,7 @@ const SurveyCanvas = ({
   const closeJsonEditor = useCallback(() => {
     setIsJsonEditorOpen(false);
     setJsonEditorValue(originalJsonValue);
+    validateJSON(originalJsonValue);
   }, [originalJsonValue]);
 
   const saveJsonChanges = useCallback(() => {
