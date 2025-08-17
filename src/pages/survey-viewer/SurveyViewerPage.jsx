@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import SurveyViewer from "../../components/SurveyViewer";
 import { mockJSONData } from "../../util/mockData";
+import { publicSurveyAPI } from "../../services/api";
+import { transformToFrontendFormat } from "../../utils/dataTransformers";
 
 const SurveyViewerPage = () => {
   const { surveyId } = useParams();
@@ -23,19 +25,18 @@ const SurveyViewerPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call to load survey data
+    // Load survey data from API
     const loadSurvey = async () => {
       setLoading(true);
       try {
-        // In real app, fetch survey data by ID
-        // const response = await fetch(`/api/surveys/${surveyId}`);
-        // const data = await response.json();
-        
-        // For demo, use mock data
-        const data = mockJSONData;
-        setSurveyData(data);
+        // Try to load from API first
+        const data = await publicSurveyAPI.getPublicSurvey(surveyId);
+        const transformedData = transformToFrontendFormat(data);
+        setSurveyData(transformedData);
       } catch (error) {
-        console.error("Error loading survey:", error);
+        console.error("Error loading survey from API:", error);
+        // Fallback to mock data for development
+        setSurveyData(mockJSONData);
       } finally {
         setLoading(false);
       }
@@ -47,20 +48,30 @@ const SurveyViewerPage = () => {
   }, [surveyId]);
 
   // Handle form submission
-  const handleSubmit = (submissionData) => {
+  const handleSubmit = async (submissionData) => {
     setFormData(submissionData);
     setIsSubmitted(true);
     
-    // In real app, send data to your backend
-    console.log("Form submitted:", submissionData);
-    console.log("Form responses:", submissionData.formData);
-    console.log("Survey metadata:", {
-      surveyId: submissionData.surveyId,
-      surveyTitle: submissionData.surveyTitle,
-      totalQuestions: submissionData.totalQuestions,
-      answeredQuestions: submissionData.answeredQuestions,
-      submittedAt: submissionData.submittedAt
-    });
+    try {
+      // Send response to backend API
+      const responseData = {
+        sessionId: `session_${Date.now()}`,
+        timeSpent: submissionData.timeSpent || 0,
+        deviceInfo: {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform
+        },
+        answers: Object.entries(submissionData.formData).map(([questionId, answer]) => ({
+          questionId,
+          answer
+        }))
+      };
+
+      await publicSurveyAPI.submitResponse(surveyId, responseData);
+      console.log("Response submitted successfully");
+    } catch (error) {
+      console.error("Error submitting response:", error);
+    }
     
     // Example: Send to parent application if embedded
     if (window.parent && window.parent !== window) {

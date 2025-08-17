@@ -180,8 +180,61 @@ const SurveyCanvas = ({
   const saveJsonChanges = useCallback(() => {
     try {
       const parsedData = JSON.parse(jsonEditorValue);
+      
+      // Fix the data structure to match what the app expects
+      const fixedData = {
+        ...parsedData,
+        currentPageId: parsedData.currentPageId || (parsedData.pages && parsedData.pages[0] ? parsedData.pages[0].id : "page_1"),
+        pages: parsedData.pages ? parsedData.pages.map(page => ({
+          ...page,
+          questions: page.questions ? page.questions.map(question => {
+            // Parse options if they're stored as JSON string
+            let options = question.options;
+            if (typeof options === 'string' && options) {
+              try {
+                options = JSON.parse(options);
+              } catch (e) {
+                console.warn('Failed to parse options:', options);
+                options = [];
+              }
+            }
+            
+            // Set default icon based on question type
+            let icon = question.icon || "Type";
+            switch (question.type) {
+              case "text":
+              case "text-input":
+                icon = "Type";
+                break;
+              case "email":
+                icon = "Mail";
+                break;
+              case "textarea":
+                icon = "FileText";
+                break;
+              case "radio":
+                icon = "Circle";
+                break;
+              case "checkbox":
+                icon = "CheckSquare";
+                break;
+              default:
+                icon = "Type";
+            }
+            
+            return {
+              ...question,
+              options: options || [],
+              icon: icon
+            };
+          }) : []
+        })) : []
+      };
+      
+      console.log("Fixed data:", fixedData);
+      
       if (onSurveyDataUpdate) {
-        onSurveyDataUpdate(parsedData);
+        onSurveyDataUpdate(fixedData);
       }
       setIsJsonEditorOpen(false);
       setOriginalJsonValue(jsonEditorValue);
@@ -1461,6 +1514,23 @@ const SurveyCanvas = ({
             <Button id="survey-canvas-settings-button" variant="outline" size="sm" iconName="Settings" className="survey-canvas-settings-button">
               Settings
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              iconName="Info" 
+              onClick={() => {
+                console.log("=== DEBUG INFO ===");
+                console.log("Survey Data:", surveyData);
+                console.log("Current Page ID:", surveyData?.currentPageId);
+                console.log("All Pages:", surveyData?.pages);
+                const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
+                console.log("Current Page:", currentPage);
+                console.log("Current Questions:", currentPage?.questions);
+                alert("Check console for debug info");
+              }}
+            >
+              Debug
+            </Button>
           </div>
         </div>
       </div>
@@ -1477,8 +1547,14 @@ const SurveyCanvas = ({
 
         
         {(() => {
+          console.log("Canvas rendering - surveyData:", surveyData);
+          console.log("Canvas rendering - currentPageId:", surveyData?.currentPageId);
+          
           const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
+          console.log("Canvas rendering - currentPage:", currentPage);
+          
           const currentQuestions = currentPage?.questions || [];
+          console.log("Canvas rendering - currentQuestions:", currentQuestions);
           
           if (currentQuestions?.length === 0) {
             return (

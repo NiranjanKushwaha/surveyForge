@@ -92,7 +92,7 @@ const SurveyCard = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSe
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between">
-          <Link to="/visual-survey-builder" className="flex-1 mr-2">
+          <Link to={`/visual-survey-builder/${survey?.id}`} className="flex-1 mr-2">
             <Button variant="default" size="sm" className="w-full">
               <Icon name="Edit" size={14} className="mr-2" />
               Edit

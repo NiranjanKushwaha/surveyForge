@@ -25,6 +25,10 @@ const Routes = () => {
             element={<VisualSurveyBuilder />}
           />
           <Route
+            path="/visual-survey-builder/:surveyId"
+            element={<VisualSurveyBuilder />}
+          />
+          <Route
             path="/survey-viewer/:surveyId"
             element={<SurveyViewerPage />}
           />

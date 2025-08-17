@@ -9,6 +9,9 @@ import SurveyListItem from "./components/SurveyListItem";
 import BulkActions from "./components/BulkActions";
 import SearchAndSort from "./components/SearchAndSort";
 import StatsOverview from "./components/StatsOverview";
+import { surveyAPI } from "../../services/api";
+import { transformSurveyListData } from "../../utils/dataTransformers";
+import { testAPIConnection } from "../../utils/apiTest";
 
 const SurveyBuilderDashboard = () => {
   const [surveys, setSurveys] = useState([]);
@@ -23,7 +26,26 @@ const SurveyBuilderDashboard = () => {
     dateRange: [],
   });
 
-  // Mock survey data
+  // Load surveys from API
+  useEffect(() => {
+    const loadSurveys = async () => {
+      try {
+        const data = await surveyAPI.getSurveys();
+        const transformedData = transformSurveyListData(data);
+        setSurveys(transformedData);
+        setFilteredSurveys(transformedData);
+      } catch (error) {
+        console.error('Error loading surveys:', error);
+        // Fallback to mock data for development
+        setSurveys(mockSurveys);
+        setFilteredSurveys(mockSurveys);
+      }
+    };
+
+    loadSurveys();
+  }, []);
+
+  // Mock survey data (fallback)
   const mockSurveys = [
     {
       id: 1,
@@ -232,6 +254,16 @@ const SurveyBuilderDashboard = () => {
     console.log("Bulk exporting surveys:", selectedSurveys);
   };
 
+  const handleTestAPI = async () => {
+    console.log('🧪 Testing API connection...');
+    const result = await testAPIConnection();
+    if (result.success) {
+      alert('✅ API connection successful! Check console for details.');
+    } else {
+      alert('❌ API connection failed! Check console for details.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -254,6 +286,15 @@ const SurveyBuilderDashboard = () => {
                 </p>
               </div>
               <div className="mt-4 lg:mt-0 flex space-x-3">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full lg:w-auto"
+                  onClick={handleTestAPI}
+                >
+                  <Icon name="TestTube" size={20} className="mr-2" />
+                  Test API
+                </Button>
                 <Link to="/demo-integration">
                   <Button
                     variant="outline"
