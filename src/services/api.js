@@ -58,10 +58,16 @@ export const surveyAPI = {
 
   // Update survey
   updateSurvey: async (id, surveyData) => {
-    console.log('🔄 Updating survey with data:', surveyData);
-    const response = await api.put(`/surveys/${id}`, surveyData);
-    console.log('✅ Survey update response:', response.data);
-    return response.data;
+    console.log('🔄 Updating survey with ID:', id);
+    console.log('🔄 Survey data being sent:', JSON.stringify(surveyData, null, 2));
+    try {
+      const response = await api.put(`/surveys/${id}`, surveyData);
+      console.log('✅ Survey update response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Survey update error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
   // Delete survey

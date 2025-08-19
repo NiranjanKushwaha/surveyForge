@@ -33,17 +33,20 @@ const VisualSurveyBuilder = () => {
   // Loading state for editing existing surveys
   const [isLoading, setIsLoading] = useState(!!surveyId);
 
+  // Selection and history states
+  const [selectedQuestionId, setSelectedQuestionId] = useState("q1");
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [saveStatus, setSaveStatus] = useState("saved"); // Start with saved since no auto-save
+
   // Load existing survey if editing
   useEffect(() => {
     const loadSurvey = async () => {
       if (surveyId) {
         try {
           setIsLoading(true);
-          console.log('🔄 Loading survey with ID:', surveyId);
           const data = await surveyAPI.getSurvey(surveyId);
-          console.log('📥 Survey data received:', data);
           const transformedData = transformToFrontendFormat(data);
-          console.log('🔄 Transformed data:', transformedData);
           setSurveyData(transformedData);
           
           // Also set the history for undo/redo
@@ -56,17 +59,34 @@ const VisualSurveyBuilder = () => {
         } finally {
           setIsLoading(false);
         }
+      } else {
+        // For new surveys, try to load auto-saved data
+        const autoSavedData = localStorage.getItem('surveyforge_autosave');
+        if (autoSavedData) {
+          try {
+            const parsedData = JSON.parse(autoSavedData);
+            setSurveyData(parsedData);
+            setHistory([parsedData]);
+            setHistoryIndex(0);
+            setSaveStatus("saved");
+          } catch (error) {
+            console.error('❌ Error parsing auto-saved data:', error);
+            // Clear invalid auto-saved data
+            localStorage.removeItem('surveyforge_autosave');
+          }
+        }
       }
     };
 
     loadSurvey();
-  }, [surveyId]);
 
-  // Selection and history states
-  const [selectedQuestionId, setSelectedQuestionId] = useState("q1");
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [saveStatus, setSaveStatus] = useState("saved");
+    // Cleanup function to clear auto-saved data when component unmounts
+    return () => {
+      if (saveStatus === "saved") {
+        localStorage.removeItem('surveyforge_autosave');
+      }
+    };
+  }, [surveyId]);
 
   // Get current page data
   const currentPage = surveyData?.pages?.find(
@@ -77,7 +97,17 @@ const VisualSurveyBuilder = () => {
     (q) => q?.id === selectedQuestionId
   );
 
-  // Auto-save functionality removed - now using manual publish/update button
+  // Auto-save functionality (local only - no API calls)
+  useEffect(() => {
+    const autoSaveTimer = setTimeout(() => {
+      if (saveStatus === "unsaved") {
+        localStorage.setItem('surveyforge_autosave', JSON.stringify(surveyData));
+        setSaveStatus("saved");
+      }
+    }, 2000);
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [surveyData, saveStatus]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -91,10 +121,6 @@ const VisualSurveyBuilder = () => {
           case "y":
             e?.preventDefault();
             handleRedo();
-            break;
-          case "s":
-            e?.preventDefault();
-            handleSave();
             break;
           case "p":
             e?.preventDefault();
@@ -117,6 +143,7 @@ const VisualSurveyBuilder = () => {
         return newHistory?.slice(-50); // Keep last 50 states
       });
       setHistoryIndex((prev) => Math.min(prev + 1, 49));
+      // Set status to indicate changes are pending
       setSaveStatus("unsaved");
     },
     [historyIndex]
@@ -255,8 +282,6 @@ const VisualSurveyBuilder = () => {
   };
 
   const handleDrop = (component, insertIndex) => {
-    console.log("Dropping component:", component); // Debug log
-    console.log("Insert index:", insertIndex); // Debug log
     
     // Generate unique name for the new question
     const questionName = `q_${Date.now()}`;
@@ -287,10 +312,6 @@ const VisualSurveyBuilder = () => {
         value: "",
       },
     };
-    
-    console.log("Created question:", newQuestion); // Debug log
-    console.log("Question type:", newQuestion.type); // Debug log
-    console.log("Component ID:", component?.id); // Debug log
 
     const newSurveyData = { ...surveyData };
     const pageIndex = newSurveyData?.pages?.findIndex(
@@ -312,9 +333,6 @@ const VisualSurveyBuilder = () => {
       
       newSurveyData.pages[pageIndex].questionCount =
         newSurveyData?.pages?.[pageIndex]?.questions?.length;
-
-      console.log("Updated survey data:", newSurveyData); // Debug log
-      console.log("Questions in current page:", newSurveyData.pages[pageIndex].questions); // Debug log
 
       setSurveyData(newSurveyData);
       addToHistory(newSurveyData);
@@ -397,15 +415,24 @@ const VisualSurveyBuilder = () => {
     setIsPropertiesCollapsed(!isPropertiesCollapsed);
   };
 
-  // Floating toolbar handlers
+  // Floating toolbar handlers - Legacy save function (kept for compatibility)
   const handleSave = async () => {
     setSaveStatus("saving");
     try {
-      console.log('💾 Saving survey data:', surveyData);
-      
+      localStorage.setItem('surveyforge_autosave', JSON.stringify(surveyData));
+      setSaveStatus("saved");
+    } catch (error) {
+      setSaveStatus("error");
+      console.error("Error saving to localStorage:", error);
+    }
+  };
+
+  // Main function for publishing/updating survey to server - ONLY function that calls API
+  const handlePublishUpdate = async () => {
+    setSaveStatus("saving");
+    try {
       // First validate and clean the data
       const validatedData = validateBackendData(surveyData);
-      console.log('✅ Validated data:', validatedData);
       
       // Then transform to backend format
       const backendData = transformToBackendFormat(validatedData);
@@ -421,11 +448,14 @@ const VisualSurveyBuilder = () => {
         navigate(`/visual-survey-builder/${newSurvey.id}`, { replace: true });
       }
       
+      // Clear auto-saved data after successful API call
+      localStorage.removeItem('surveyforge_autosave');
       setSaveStatus("saved");
-      console.log("Survey saved successfully");
+      alert(surveyId ? "Survey updated successfully!" : "Survey created successfully!");
     } catch (error) {
       setSaveStatus("error");
-      console.error("Error saving survey:", error);
+      console.error("Error publishing/updating survey:", error);
+      alert(`Error: ${error.message}`);
     }
   };
 
@@ -482,6 +512,9 @@ const VisualSurveyBuilder = () => {
   // Initialize with empty survey if no data
   useEffect(() => {
     if (!surveyData || !surveyData?.pages || surveyData?.pages?.length === 0) {
+      // Clear any existing auto-saved data when starting fresh
+      localStorage.removeItem('surveyforge_autosave');
+      
       const emptySurvey = {
         id: `survey_${Date.now()}`,
         title: "Untitled Survey",
@@ -606,6 +639,7 @@ const VisualSurveyBuilder = () => {
           onRedo={handleRedo}
           onSave={handleSave}
           onPreview={handlePreview}
+          onPublishUpdate={handlePublishUpdate}
           canUndo={historyIndex > 0}
           canRedo={historyIndex < history?.length - 1}
           saveStatus={saveStatus}

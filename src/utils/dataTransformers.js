@@ -1,35 +1,51 @@
 // Transform frontend survey data to backend API format
 export const transformToBackendFormat = (frontendData) => {
-  console.log('🔄 Transforming frontend data to backend format:', frontendData);
+  // Ensure all questions have unique orderIndex values
+  const normalizedData = { ...frontendData };
+  if (normalizedData.pages && Array.isArray(normalizedData.pages)) {
+    normalizedData.pages = normalizedData.pages.map((page, pageIndex) => {
+      const normalizedPage = { ...page, orderIndex: pageIndex };
+      
+      if (page.questions && Array.isArray(page.questions)) {
+        normalizedPage.questions = page.questions.map((question, questionIndex) => ({
+          ...question,
+          orderIndex: questionIndex
+        }));
+      }
+      
+      return normalizedPage;
+    });
+  }
   
   const transformed = {
-    title: frontendData.title,
-    description: frontendData.description,
-    settings: parseJsonField(frontendData.settings) || {},
-    theme: parseJsonField(frontendData.theme) || {},
-    isPublic: frontendData.isPublic || false,
-    allowAnonymous: frontendData.allowAnonymous || true,
-    expiresAt: frontendData.expiresAt,
-    pages: frontendData.pages?.map(page => ({
-      name: page.name,
-      orderIndex: page.orderIndex || 0,
+    title: String(normalizedData.title || ''),
+    description: String(normalizedData.description || ''),
+    settings: parseJsonField(normalizedData.settings) || {},
+    theme: parseJsonField(normalizedData.theme) || {},
+    isPublic: ensureBoolean(normalizedData.isPublic, false),
+    allowAnonymous: ensureBoolean(normalizedData.allowAnonymous, true),
+    expiresAt: ensureDate(normalizedData.expiresAt),
+    pages: normalizedData.pages?.map(page => ({
+      name: String(page.name || ''),
+      orderIndex: ensureNumber(page.orderIndex, 0),
       questions: page.questions?.map(question => ({
-        name: question.name,
-        type: mapQuestionType(question.type), // Map question types to backend supported types
-        title: question.title,
-        description: question.description,
-        placeholder: question.placeholder,
-        required: question.required || false,
-        orderIndex: question.orderIndex || 0,
+        name: String(question.name || ''),
+        type: String(mapQuestionType(question.type) || 'text'),
+        title: String(question.title || ''),
+        description: String(question.description || ''),
+        placeholder: String(question.placeholder || ''),
+        required: ensureBoolean(question.required, false),
+        orderIndex: ensureNumber(question.orderIndex, 0),
         validation: parseJsonField(question.validation) || {},
         conditionalLogic: parseJsonField(question.conditionalLogic) || {},
         styling: parseJsonField(question.styling) || {},
-        options: question.options || []
+        options: ensureArray(question.options)
       })) || []
     })) || []
   };
   
-  console.log('✅ Transformed backend data:', transformed);
+
+  
   return transformed;
 };
 
@@ -39,11 +55,74 @@ const parseJsonField = (field) => {
     try {
       return JSON.parse(field);
     } catch (error) {
-      console.warn('Failed to parse JSON field:', field, error);
       return {};
     }
   }
   return field || {};
+};
+
+// Helper function to ensure a field is always an array
+const ensureArray = (field) => {
+  if (Array.isArray(field)) {
+    return field;
+  }
+  if (typeof field === 'string') {
+    try {
+      const parsed = JSON.parse(field);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+  return [];
+};
+
+// Helper function to ensure a field is always a number
+const ensureNumber = (field, defaultValue = 0) => {
+  if (typeof field === 'number' && !isNaN(field)) {
+    return field;
+  }
+  if (typeof field === 'string') {
+    const parsed = parseFloat(field);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return defaultValue;
+};
+
+// Helper function to ensure a field is always a boolean
+const ensureBoolean = (field, defaultValue = false) => {
+  if (typeof field === 'boolean') {
+    return field;
+  }
+  if (typeof field === 'string') {
+    if (field.toLowerCase() === 'true') return true;
+    if (field.toLowerCase() === 'false') return false;
+  }
+  if (typeof field === 'number') {
+    return field !== 0;
+  }
+  return defaultValue;
+};
+
+// Helper function to ensure a field is a valid date or null
+const ensureDate = (field) => {
+  if (!field) return null;
+  if (field instanceof Date) return field.toISOString();
+  if (typeof field === 'string') {
+    const date = new Date(field);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+  if (typeof field === 'number') {
+    const date = new Date(field);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+  return null;
 };
 
 // Map frontend question types to backend supported types
@@ -95,7 +174,7 @@ export const transformToFrontendFormat = (backendData) => {
         validation: parseJsonField(question.validation) || {},
         conditionalLogic: parseJsonField(question.conditionalLogic) || {},
         styling: parseJsonField(question.styling) || {},
-        options: question.options || [],
+        options: ensureArray(question.options),
         // Frontend-specific properties
         icon: getQuestionIcon(mapBackendQuestionType(question.type)),
         logic: {
@@ -172,7 +251,47 @@ export const transformSurveyListData = (backendSurveys) => {
 
 // Validate and clean data before sending to backend
 export const validateBackendData = (data) => {
+  console.log('🔍 Validating backend data:', data);
   const cleaned = { ...data };
+  
+  // Ensure all questions have unique orderIndex values
+  if (cleaned.pages && Array.isArray(cleaned.pages)) {
+    cleaned.pages = cleaned.pages.map((page, pageIndex) => {
+      const cleanedPage = {
+        ...page,
+        name: String(page.name || ''),
+        orderIndex: pageIndex
+      };
+      
+      if (page.questions && Array.isArray(page.questions)) {
+        cleanedPage.questions = page.questions.map((question, questionIndex) => ({
+          ...question,
+          name: String(question.name || ''),
+          type: String(question.type || 'text'),
+          title: String(question.title || ''),
+          description: String(question.description || ''),
+          placeholder: String(question.placeholder || ''),
+          required: ensureBoolean(question.required, false),
+          orderIndex: questionIndex,
+          validation: parseJsonField(question.validation),
+          conditionalLogic: parseJsonField(question.conditionalLogic),
+          styling: parseJsonField(question.styling),
+          options: ensureArray(question.options)
+        }));
+      } else {
+        cleanedPage.questions = [];
+      }
+      
+      return cleanedPage;
+    });
+  }
+  
+  // Ensure top-level fields have correct types
+  cleaned.title = String(cleaned.title || '');
+  cleaned.description = String(cleaned.description || '');
+  cleaned.isPublic = ensureBoolean(cleaned.isPublic, false);
+  cleaned.allowAnonymous = ensureBoolean(cleaned.allowAnonymous, true);
+  cleaned.expiresAt = ensureDate(cleaned.expiresAt);
   
   // Ensure settings and theme are objects
   if (typeof cleaned.settings === 'string') {
@@ -193,18 +312,18 @@ export const validateBackendData = (data) => {
     }
   }
   
-  // Ensure all question fields are objects
-  if (cleaned.pages) {
-    cleaned.pages = cleaned.pages.map(page => ({
-      ...page,
-      questions: page.questions?.map(question => ({
-        ...question,
-        validation: parseJsonField(question.validation),
-        conditionalLogic: parseJsonField(question.conditionalLogic),
-        styling: parseJsonField(question.styling)
-      })) || []
-    })) || [];
-  }
+
+  
+  console.log('✅ Validated and cleaned data:', cleaned);
+  
+  // Final check: Log the structure of the cleaned data
+  console.log('🔍 Final data structure check:');
+  console.log('- title type:', typeof cleaned.title, 'value:', cleaned.title);
+  console.log('- description type:', typeof cleaned.description, 'value:', cleaned.description);
+  console.log('- isPublic type:', typeof cleaned.isPublic, 'value:', cleaned.isPublic);
+  console.log('- allowAnonymous type:', typeof cleaned.allowAnonymous, 'value:', cleaned.allowAnonymous);
+  console.log('- expiresAt type:', typeof cleaned.expiresAt, 'value:', cleaned.expiresAt);
+  console.log('- pages count:', cleaned.pages?.length || 0);
   
   return cleaned;
 };

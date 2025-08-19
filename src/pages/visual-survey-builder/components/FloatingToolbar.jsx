@@ -8,6 +8,7 @@ const FloatingToolbar = ({
   onRedo,
   onSave,
   onPreview,
+  onPublishUpdate,
   canUndo,
   canRedo,
   saveStatus,
@@ -34,7 +35,7 @@ const FloatingToolbar = ({
           color: "var(--color-warning)",
         };
       case "saved":
-        return { icon: "Check", text: "Saved", color: "var(--color-success)" };
+        return { icon: "Check", text: "Auto-saved", color: "var(--color-success)" };
       case "error":
         return {
           icon: "AlertCircle",
@@ -44,7 +45,7 @@ const FloatingToolbar = ({
       default:
         return {
           icon: "Clock",
-          text: "Unsaved",
+          text: "Auto-saving...",
           color: "var(--color-text-secondary)",
         };
     }
@@ -158,6 +159,24 @@ const FloatingToolbar = ({
               {isPreviewMode ? "Exit Preview" : "Preview"}
             </Button>
 
+            {/* Publish/Update Button - ONLY button that calls API */}
+            <Button
+              variant={saveStatus === "unsaved" ? "destructive" : "default"}
+              size="sm"
+              onClick={onPublishUpdate}
+              iconName="Send"
+              title={saveStatus === "unsaved" ? "Publish/Update Survey to Server (Unsaved Changes)" : "Publish/Update Survey to Server"}
+              className="floating-toolbar-publish-button"
+              id="floating-toolbar-publish-button"
+            >
+              {surveyData?.id ? "Update" : "Publish"}
+              {saveStatus === "unsaved" && (
+                <span className="ml-1 text-xs bg-white/20 px-1.5 py-0.5 rounded-full">
+                  !
+                </span>
+              )}
+            </Button>
+
             {/* More Actions */}
             <div className="relative">
               <Button
@@ -183,7 +202,7 @@ const FloatingToolbar = ({
                       className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-save-button"
                     >
                       <Icon name="Save" size={14} />
-                      <span>Save Survey</span>
+                      <span>Save to Local Storage</span>
                       <span className="ml-auto text-xs text-text-secondary">
                         Ctrl+S
                       </span>
@@ -198,9 +217,8 @@ const FloatingToolbar = ({
                       id="floating-toolbar-copy-json-button"
                       className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-copy-json-button"
                     >
-                      <Icon name="Copy" size={14} />{" "}
-                      {/* Changed icon to Copy */}
-                      <span>Copy Survey JSON</span> {/* Changed text */}
+                      <Icon name="Copy" size={14} />
+                      <span>Copy Survey JSON</span>
                     </button>
 
                     <button
@@ -243,7 +261,7 @@ const FloatingToolbar = ({
             <div className="flex items-center justify-center space-x-4 text-xs text-text-secondary">
               <span>Ctrl+Z: Undo</span>
               <span>Ctrl+Y: Redo</span>
-              <span>Ctrl+S: Save</span>
+              <span>Ctrl+S: Save Locally</span>
               <span>Ctrl+P: Preview</span>
             </div>
           </div>

@@ -18,8 +18,6 @@ const SurveyCanvas = ({
   onTogglePreview,
   onSurveyDataUpdate, // Add this prop for updating survey data
 }) => {
-  console.log("SurveyCanvas received surveyData:", surveyData); // Debug log
-  console.log("SurveyCanvas received onQuestionReorder:", onQuestionReorder); // Debug log
   
   // Clean state management
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -49,7 +47,6 @@ const SurveyCanvas = ({
 
   // Simple working drag and drop
   const handleQuestionDragStart = useCallback((e, questionId) => {
-    console.log('🚀 Drag started for question:', questionId);
     setDraggedQuestionId(questionId);
     setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
@@ -57,7 +54,6 @@ const SurveyCanvas = ({
   }, []);
 
   const handleQuestionDragEnd = useCallback(() => {
-    console.log('🏁 Drag ended');
     setDraggedQuestionId(null);
     setDragOverQuestionId(null);
     setIsDragging(false);
@@ -76,7 +72,6 @@ const SurveyCanvas = ({
 
   const handleQuestionDrop = useCallback((e, targetQuestionId) => {
     e.preventDefault();
-    console.log('🎯 Drop on question:', targetQuestionId, 'from:', draggedQuestionId);
     
     if (draggedQuestionId && draggedQuestionId !== targetQuestionId) {
       const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
@@ -84,8 +79,6 @@ const SurveyCanvas = ({
       
       const fromIndex = currentQuestions.findIndex(q => q.id === draggedQuestionId);
       const toIndex = currentQuestions.findIndex(q => q.id === targetQuestionId);
-      
-      console.log('📊 Reordering from index:', fromIndex, 'to index:', toIndex);
       
       if (fromIndex !== -1 && toIndex !== -1) {
         if (onQuestionReorder) {
@@ -490,8 +483,6 @@ const SurveyCanvas = ({
   };
 
   const renderQuestion = (question, index) => {
-    console.log("Rendering question:", question); // Debug log
-    console.log("Question type in renderQuestion:", question?.type); // Debug log
     
     const isSelected = selectedQuestionId === question?.id;
     const isDragging = draggedQuestionId === question?.id;
@@ -513,23 +504,18 @@ const SurveyCanvas = ({
           data-question-index={index}
           draggable={true}
           onDragStart={(e) => {
-            console.log('🎯 Drag start event fired for question:', question?.id); // Debug log
             handleQuestionDragStart(e, question?.id);
           }}
           onDragEnd={(e) => {
-            console.log('🏁 Drag end event fired for question:', question?.id); // Debug log
             handleQuestionDragEnd(e);
           }}
           onDragOver={(e) => {
-            console.log('🔄 Drag over event fired for question:', question?.id); // Debug log
             handleQuestionDragOver(e, question?.id);
           }}
           onDragLeave={(e) => {
-            console.log('👋 Drag leave event fired for question:', question?.id); // Debug log
             handleQuestionDragLeave(e);
           }}
           onDrop={(e) => {
-            console.log('🎯 Drop event fired for question:', question?.id); // Debug log
             handleQuestionDrop(e, question?.id);
           }}
           onClick={() => onQuestionSelect(question?.id)}
@@ -657,8 +643,6 @@ const SurveyCanvas = ({
   };
 
   const renderQuestionPreview = (question) => {
-    console.log("Rendering preview for question:", question); // Debug log
-    console.log("Question type:", question?.type); // Debug log
     
     const inputClasses = clsx(
       "w-full transition-all duration-200",
@@ -1373,7 +1357,6 @@ const SurveyCanvas = ({
       // This case should not be reached for supported types
 
       default:
-        console.warn(`Unhandled question type: ${question?.type}`); // Debug log
         return (
           <div className="p-3 bg-muted rounded-md text-center">
             <Icon
@@ -1547,14 +1530,8 @@ const SurveyCanvas = ({
 
         
         {(() => {
-          console.log("Canvas rendering - surveyData:", surveyData);
-          console.log("Canvas rendering - currentPageId:", surveyData?.currentPageId);
-          
           const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
-          console.log("Canvas rendering - currentPage:", currentPage);
-          
           const currentQuestions = currentPage?.questions || [];
-          console.log("Canvas rendering - currentQuestions:", currentQuestions);
           
           if (currentQuestions?.length === 0) {
             return (
