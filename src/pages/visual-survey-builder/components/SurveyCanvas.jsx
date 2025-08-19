@@ -18,8 +18,6 @@ const SurveyCanvas = ({
   onTogglePreview,
   onSurveyDataUpdate, // Add this prop for updating survey data
 }) => {
-  
-  // Clean state management
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [previewMode, setPreviewMode] = useState("default");
   const [isJsonEditorOpen, setIsJsonEditorOpen] = useState(false);
@@ -173,61 +171,8 @@ const SurveyCanvas = ({
   const saveJsonChanges = useCallback(() => {
     try {
       const parsedData = JSON.parse(jsonEditorValue);
-      
-      // Fix the data structure to match what the app expects
-      const fixedData = {
-        ...parsedData,
-        currentPageId: parsedData.currentPageId || (parsedData.pages && parsedData.pages[0] ? parsedData.pages[0].id : "page_1"),
-        pages: parsedData.pages ? parsedData.pages.map(page => ({
-          ...page,
-          questions: page.questions ? page.questions.map(question => {
-            // Parse options if they're stored as JSON string
-            let options = question.options;
-            if (typeof options === 'string' && options) {
-              try {
-                options = JSON.parse(options);
-              } catch (e) {
-                console.warn('Failed to parse options:', options);
-                options = [];
-              }
-            }
-            
-            // Set default icon based on question type
-            let icon = question.icon || "Type";
-            switch (question.type) {
-              case "text":
-              case "text-input":
-                icon = "Type";
-                break;
-              case "email":
-                icon = "Mail";
-                break;
-              case "textarea":
-                icon = "FileText";
-                break;
-              case "radio":
-                icon = "Circle";
-                break;
-              case "checkbox":
-                icon = "CheckSquare";
-                break;
-              default:
-                icon = "Type";
-            }
-            
-            return {
-              ...question,
-              options: options || [],
-              icon: icon
-            };
-          }) : []
-        })) : []
-      };
-      
-      console.log("Fixed data:", fixedData);
-      
       if (onSurveyDataUpdate) {
-        onSurveyDataUpdate(fixedData);
+        onSurveyDataUpdate(parsedData);
       }
       setIsJsonEditorOpen(false);
       setOriginalJsonValue(jsonEditorValue);
@@ -643,13 +588,12 @@ const SurveyCanvas = ({
   };
 
   const renderQuestionPreview = (question) => {
-    
+
     const inputClasses = clsx(
       "w-full transition-all duration-200",
       previewMode === "form"
-        ? "px-4 py-3 border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
-        : "px-3 py-2 border-border rounded-md",
-      "border bg-background text-foreground placeholder:text-text-secondary"
+        ? "px-4 py-3 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-foreground placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base"
+        : "px-3 py-2 border border-border rounded bg-background text-foreground"
     );
 
     switch (question?.type) {
@@ -664,6 +608,7 @@ const SurveyCanvas = ({
             placeholder={question?.placeholder || "Your answer..."}
             className={inputClasses}
             disabled={previewMode !== "form"}
+
           />
         );
 
@@ -674,6 +619,7 @@ const SurveyCanvas = ({
             rows={3}
             className={clsx(inputClasses, "resize-none min-h-[80px]")}
             disabled={previewMode !== "form"}
+
           />
         );
 
@@ -699,6 +645,7 @@ const SurveyCanvas = ({
                     "text-primary",
                     previewMode === "form" && "h-5 w-5"
                   )}
+
                 />
                 <span
                   className={clsx(
@@ -783,31 +730,31 @@ const SurveyCanvas = ({
                 { label: "Option 2", value: "option2" },
                 { label: "Option 3", value: "option3" }
               ].map((option, index) => (
-                <label
-                  key={index}
+              <label
+                key={index}
+                className={clsx(
+                  "flex items-center gap-3 cursor-pointer",
+                  previewMode === "form" &&
+                    "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                )}
+              >
+                <input
+                  type="checkbox"
+                  disabled={previewMode !== "form"}
                   className={clsx(
-                    "flex items-center gap-3 cursor-pointer",
-                    previewMode === "form" &&
-                      "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                    "text-primary rounded",
+                    previewMode === "form" && "h-5 w-5"
+                  )}
+                />
+                <span
+                  className={clsx(
+                    "text-foreground",
+                    previewMode === "form" ? "text-base" : "text-sm"
                   )}
                 >
-                  <input
-                    type="checkbox"
-                    disabled={previewMode !== "form"}
-                    className={clsx(
-                      "text-primary rounded",
-                      previewMode === "form" && "h-5 w-5"
-                    )}
-                  />
-                  <span
-                    className={clsx(
-                      "text-foreground",
-                      previewMode === "form" ? "text-base" : "text-sm"
-                    )}
-                  >
                     {option?.label}
-                  </span>
-                </label>
+                </span>
+              </label>
               ))
             )}
           </div>
@@ -824,6 +771,7 @@ const SurveyCanvas = ({
                 : ""
             )}
             disabled={previewMode !== "form"}
+
           >
             <option value="">Select an option...</option>
             {(question?.options && question?.options?.length > 0) ? question?.options?.map((option, index) => (
@@ -922,10 +870,11 @@ const SurveyCanvas = ({
             {[1, 2, 3, 4, 5]?.map((star) => (
               <button
                 key={star}
+                type="button"
                 className={clsx(
                   "transition-all duration-200 survey-canvas-star-rating-button",
                   previewMode === "form"
-                    ? "p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full hover:scale-110"
+                    ? "p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     : "cursor-default"
                 )}
                 id={`survey-canvas-star-rating-button-${star}`}
@@ -935,7 +884,7 @@ const SurveyCanvas = ({
                 <Icon
                   name="Star"
                   size={previewMode === "form" ? 20 : 18}
-                  className="text-zinc-300 hover:text-yellow-400 transition-colors"
+                  className="text-yellow-400 transition-colors"
                 />
               </button>
             ))}
@@ -985,7 +934,7 @@ const SurveyCanvas = ({
                     type="radio"
                     name={`likert-${question?.id}`}
                     value={point}
-                    disabled={!previewMode === "form"}
+                    disabled={previewMode !== "form"}
                     className={clsx("sr-only")}
                   />
                   <div
@@ -1024,10 +973,11 @@ const SurveyCanvas = ({
                 {Array.from({ length: 11 }, (_, i) => (
                   <button
                     key={i}
+                    type="button"
                     className={clsx(
                       "w-7 h-7 rounded border-2 transition-colors",
                       previewMode === "form"
-                        ? "border-gray-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer hover:scale-110"
+                        ? "border-gray-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/20"
                         : "border-gray-200 cursor-default"
                     )}
                     disabled={previewMode !== "form"}
@@ -1061,8 +1011,12 @@ const SurveyCanvas = ({
               max="100"
               defaultValue="50"
               step="1"
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              className={clsx(
+                "w-full h-2 bg-gray-200 rounded-lg appearance-none slider",
+                previewMode === "form" ? "cursor-pointer" : "cursor-default"
+              )}
               disabled={previewMode !== "form"}
+
             />
             <div className="text-center">
               <span className="text-sm font-medium">50</span>
@@ -1247,6 +1201,7 @@ const SurveyCanvas = ({
               type="date"
               className={inputClasses}
               disabled={previewMode !== "form"}
+
             />
             {previewMode === "form" && (
               <div className="text-xs text-text-secondary text-center">
@@ -1402,24 +1357,12 @@ const SurveyCanvas = ({
                 transformedQuestion.placeholder = question.placeholder || "Enter a number...";
                 break;
               case "matrix-single":
-                // Convert matrix single to radio with options
-                transformedQuestion.type = "radio";
-                if (!transformedQuestion.options) {
-                  transformedQuestion.options = [
-                    { id: "opt1", label: "Option 1", value: "option1" },
-                    { id: "opt2", label: "Option 2", value: "option2" }
-                  ];
-                }
+                // Keep matrix-single type for proper rendering
+                transformedQuestion.type = "matrix-single";
                 break;
               case "matrix-multiple":
-                // Convert matrix multiple to checkbox with options
-                transformedQuestion.type = "checkbox";
-                if (!transformedQuestion.options) {
-                  transformedQuestion.options = [
-                    { id: "opt1", label: "Option 1", value: "option1" },
-                    { id: "opt2", label: "Option 2", value: "option2" }
-                  ];
-                }
+                // Keep matrix-multiple type for proper rendering
+                transformedQuestion.type = "matrix-multiple";
                 break;
               case "likert":
                 // Convert likert to radio with scale options
@@ -1658,7 +1601,7 @@ const SurveyCanvas = ({
                   }
                   
                   return (
-                    <div className="p-6">
+                    <div className="p-6 overflow-y-auto max-h-screen">
                       {(() => {
                         const transformedData = transformDataForSurveyViewer({
                           ...surveyData,

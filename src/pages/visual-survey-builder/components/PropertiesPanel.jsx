@@ -158,6 +158,13 @@ const PropertiesPanel = ({ selectedQuestion, onQuestionUpdate, isCollapsed, onTo
           </div>
           
           <div className="space-y-2 max-h-48 overflow-y-auto">
+            {/* Column headers */}
+              <div className="flex items-center space-x-2 px-2 py-1 bg-muted rounded text-xs font-medium text-text-secondary">
+              <div className="flex-1">Label</div>
+              <div className="flex-1">Value</div>
+              <div className="w-6"></div> {/* Space for delete button */}
+            </div>
+            
             {(selectedQuestion?.options || [])?.map((option, index) => (
               <div key={option?.id || index} className="flex items-center space-x-2 p-2 bg-surface rounded border border-border">
                 <Input
