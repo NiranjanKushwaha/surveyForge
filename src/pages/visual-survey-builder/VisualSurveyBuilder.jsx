@@ -39,7 +39,16 @@ const VisualSurveyBuilder = () => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [saveStatus, setSaveStatus] = useState("saved"); // Start with saved since no auto-save
 
-  // Load existing survey if editing
+  // Derived values
+  const currentPage = surveyData?.pages?.find(
+    (page) => page?.id === surveyData?.currentPageId
+  );
+  const currentQuestions = currentPage?.questions || [];
+  const selectedQuestion = currentQuestions?.find(
+    (q) => q?.id === selectedQuestionId
+  );
+
+  // Effects: Load existing survey if editing
   useEffect(() => {
     const loadSurvey = async () => {
       if (surveyId) {
@@ -88,16 +97,7 @@ const VisualSurveyBuilder = () => {
     };
   }, [surveyId]);
 
-  // Get current page data
-  const currentPage = surveyData?.pages?.find(
-    (page) => page?.id === surveyData?.currentPageId
-  );
-  const currentQuestions = currentPage?.questions || [];
-  const selectedQuestion = currentQuestions?.find(
-    (q) => q?.id === selectedQuestionId
-  );
-
-  // Auto-save functionality (local only - no API calls)
+  // Effects: Auto-save functionality (local only - no API calls)
   useEffect(() => {
     const autoSaveTimer = setTimeout(() => {
       if (saveStatus === "unsaved") {
@@ -112,7 +112,33 @@ const VisualSurveyBuilder = () => {
     return () => clearTimeout(autoSaveTimer);
   }, [surveyData, saveStatus]);
 
-  // Keyboard shortcuts
+  // Effects: Initialize with empty survey if no data
+  useEffect(() => {
+    if (!surveyData || !surveyData?.pages || surveyData?.pages?.length === 0) {
+      // Clear any existing auto-saved data when starting fresh
+      localStorage.removeItem("surveyforge_autosave");
+
+      const emptySurvey = {
+        id: `survey_${Date.now()}`,
+        title: "Untitled Survey",
+        description: "",
+        currentPageId: "page_1",
+        pages: [
+          {
+            id: "page_1",
+            name: "Page 1",
+            questionCount: 0,
+            questions: [],
+          },
+        ],
+      };
+      setSurveyData(emptySurvey);
+      setHistory([emptySurvey]);
+      setHistoryIndex(0);
+    }
+  }, []);
+
+  // Effects: Keyboard shortcuts (placed after handlers it uses)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e?.ctrlKey || e?.metaKey) {
@@ -137,7 +163,7 @@ const VisualSurveyBuilder = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isPreviewMode]);
 
-  // History management
+  // Memoized helpers
   const addToHistory = useCallback(
     (newData) => {
       setHistory((prev) => {
@@ -531,32 +557,7 @@ const VisualSurveyBuilder = () => {
     }
   };
 
-  // Initialize with empty survey if no data
-  useEffect(() => {
-    if (!surveyData || !surveyData?.pages || surveyData?.pages?.length === 0) {
-      // Clear any existing auto-saved data when starting fresh
-      localStorage.removeItem("surveyforge_autosave");
-
-      const emptySurvey = {
-        id: `survey_${Date.now()}`,
-        title: "Untitled Survey",
-        description: "",
-        currentPageId: "page_1",
-        pages: [
-          {
-            id: "page_1",
-            name: "Page 1",
-            questionCount: 0,
-            questions: [],
-          },
-        ],
-      };
-      setSurveyData(emptySurvey);
-      setHistory([emptySurvey]);
-      setHistoryIndex(0);
-    }
-  }, []);
-
+  // UI Data
   const breadcrumbItems = [
     { label: "Dashboard", path: "/survey-builder-dashboard" },
     { label: "Visual Builder", path: "/visual-survey-builder" },
