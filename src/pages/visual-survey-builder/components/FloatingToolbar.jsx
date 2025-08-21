@@ -37,8 +37,14 @@ const FloatingToolbar = ({
       case "saved":
         return {
           icon: "Check",
-          text: "Auto-saved",
+          text: "Saved",
           color: "var(--color-success)",
+        };
+      case "unsaved":
+        return {
+          icon: "Clock",
+          text: "Unsaved",
+          color: "var(--color-warning)",
         };
       case "error":
         return {

@@ -15,6 +15,7 @@ import {
   transformToFrontendFormat,
   validateBackendData,
 } from "../../utils/dataTransformers";
+import { SAVE_STATUS } from "./constants";
 
 const VisualSurveyBuilder = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const VisualSurveyBuilder = () => {
   const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [surveyData, setSurveyData] = useState({
-    id: surveyId || "survey_001",
+    id: surveyId || null,
     title: "Customer Satisfaction Survey",
     description: "Help us improve our services by sharing your feedback",
     currentPageId: "page_1",
@@ -37,7 +38,8 @@ const VisualSurveyBuilder = () => {
   const [selectedQuestionId, setSelectedQuestionId] = useState("q1");
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [saveStatus, setSaveStatus] = useState("saved"); // Start with saved since no auto-save
+  // Centralized save status values
+  const [saveStatus, setSaveStatus] = useState(SAVE_STATUS.SAVED); // Start with saved since no auto-save
 
   // Derived values
   const currentPage = surveyData?.pages?.find(
@@ -77,7 +79,7 @@ const VisualSurveyBuilder = () => {
             setSurveyData(parsedData);
             setHistory([parsedData]);
             setHistoryIndex(0);
-            setSaveStatus("saved");
+            setSaveStatus(SAVE_STATUS.SAVED);
           } catch (error) {
             console.error("❌ Error parsing auto-saved data:", error);
             // Clear invalid auto-saved data
@@ -100,12 +102,12 @@ const VisualSurveyBuilder = () => {
   // Effects: Auto-save functionality (local only - no API calls)
   useEffect(() => {
     const autoSaveTimer = setTimeout(() => {
-      if (saveStatus === "unsaved") {
+      if (saveStatus === SAVE_STATUS.UNSAVED) {
         localStorage.setItem(
           "surveyforge_autosave",
           JSON.stringify(surveyData)
         );
-        setSaveStatus("saved");
+        setSaveStatus(SAVE_STATUS.SAVED);
       }
     }, 2000);
 
@@ -119,7 +121,7 @@ const VisualSurveyBuilder = () => {
       localStorage.removeItem("surveyforge_autosave");
 
       const emptySurvey = {
-        id: `survey_${Date.now()}`,
+        id: null,
         title: "Untitled Survey",
         description: "",
         currentPageId: "page_1",
@@ -173,7 +175,7 @@ const VisualSurveyBuilder = () => {
       });
       setHistoryIndex((prev) => Math.min(prev + 1, 49));
       // Set status to indicate changes are pending
-      setSaveStatus("unsaved");
+      setSaveStatus(SAVE_STATUS.UNSAVED);
     },
     [historyIndex]
   );
@@ -461,19 +463,19 @@ const VisualSurveyBuilder = () => {
 
   // Floating toolbar handlers - Legacy save function (kept for compatibility)
   const handleSave = async () => {
-    setSaveStatus("saving");
+    setSaveStatus(SAVE_STATUS.SAVING);
     try {
       localStorage.setItem("surveyforge_autosave", JSON.stringify(surveyData));
-      setSaveStatus("saved");
+      setSaveStatus(SAVE_STATUS.SAVED);
     } catch (error) {
-      setSaveStatus("error");
+      setSaveStatus(SAVE_STATUS.ERROR);
       console.error("Error saving to localStorage:", error);
     }
   };
 
   // Main function for publishing/updating survey to server - ONLY function that calls API
   const handlePublishUpdate = async () => {
-    setSaveStatus("saving");
+    setSaveStatus(SAVE_STATUS.SAVING);
     try {
       // First validate and clean the data
       const validatedData = validateBackendData(surveyData);
@@ -494,14 +496,14 @@ const VisualSurveyBuilder = () => {
 
       // Clear auto-saved data after successful API call
       localStorage.removeItem("surveyforge_autosave");
-      setSaveStatus("saved");
+      setSaveStatus(SAVE_STATUS.SAVED);
       alert(
         surveyId
           ? "Survey updated successfully!"
           : "Survey created successfully!"
       );
     } catch (error) {
-      setSaveStatus("error");
+      setSaveStatus(SAVE_STATUS.ERROR);
       console.error("Error publishing/updating survey:", error);
       alert(`Error: ${error.message}`);
     }
@@ -511,7 +513,7 @@ const VisualSurveyBuilder = () => {
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
       setSurveyData(history[historyIndex - 1]);
-      setSaveStatus("unsaved");
+      setSaveStatus(SAVE_STATUS.UNSAVED);
     }
   };
 
@@ -519,7 +521,7 @@ const VisualSurveyBuilder = () => {
     if (historyIndex < history?.length - 1) {
       setHistoryIndex(historyIndex + 1);
       setSurveyData(history[historyIndex + 1]);
-      setSaveStatus("unsaved");
+      setSaveStatus(SAVE_STATUS.UNSAVED);
     }
   };
 
@@ -548,7 +550,7 @@ const VisualSurveyBuilder = () => {
           setSurveyData(importedData);
           setHistory([importedData]);
           setHistoryIndex(0);
-          setSaveStatus("unsaved");
+          setSaveStatus(SAVE_STATUS.UNSAVED);
         } catch (error) {
           console.error("Error parsing imported file:", error);
         }
