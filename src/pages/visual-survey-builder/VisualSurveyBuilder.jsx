@@ -8,20 +8,20 @@ import SurveyCanvas from "./components/SurveyCanvas";
 import PropertiesPanel from "./components/PropertiesPanel";
 import FloatingToolbar from "./components/FloatingToolbar";
 import PageNavigation from "./components/PageNavigation";
-import { mockJSONData } from "../../util/mockData";
+// import { mockJSONData } from "../../util/mockData";
 import { surveyAPI } from "../../services/api";
-import { transformToBackendFormat, transformToFrontendFormat, validateBackendData } from "../../utils/dataTransformers";
+import {
+  transformToBackendFormat,
+  transformToFrontendFormat,
+  validateBackendData,
+} from "../../utils/dataTransformers";
 
 const VisualSurveyBuilder = () => {
   const navigate = useNavigate();
   const { surveyId } = useParams();
-
-  // Panel states
   const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-
-  // Survey data state
   const [surveyData, setSurveyData] = useState({
     id: surveyId || "survey_001",
     title: "Customer Satisfaction Survey",
@@ -48,12 +48,12 @@ const VisualSurveyBuilder = () => {
           const data = await surveyAPI.getSurvey(surveyId);
           const transformedData = transformToFrontendFormat(data);
           setSurveyData(transformedData);
-          
+
           // Also set the history for undo/redo
           setHistory([transformedData]);
           setHistoryIndex(0);
         } catch (error) {
-          console.error('❌ Error loading survey:', error);
+          console.error("❌ Error loading survey:", error);
           // Fallback to new survey
           alert(`Failed to load survey: ${error.message}`);
         } finally {
@@ -61,7 +61,7 @@ const VisualSurveyBuilder = () => {
         }
       } else {
         // For new surveys, try to load auto-saved data
-        const autoSavedData = localStorage.getItem('surveyforge_autosave');
+        const autoSavedData = localStorage.getItem("surveyforge_autosave");
         if (autoSavedData) {
           try {
             const parsedData = JSON.parse(autoSavedData);
@@ -70,9 +70,9 @@ const VisualSurveyBuilder = () => {
             setHistoryIndex(0);
             setSaveStatus("saved");
           } catch (error) {
-            console.error('❌ Error parsing auto-saved data:', error);
+            console.error("❌ Error parsing auto-saved data:", error);
             // Clear invalid auto-saved data
-            localStorage.removeItem('surveyforge_autosave');
+            localStorage.removeItem("surveyforge_autosave");
           }
         }
       }
@@ -83,7 +83,7 @@ const VisualSurveyBuilder = () => {
     // Cleanup function to clear auto-saved data when component unmounts
     return () => {
       if (saveStatus === "saved") {
-        localStorage.removeItem('surveyforge_autosave');
+        localStorage.removeItem("surveyforge_autosave");
       }
     };
   }, [surveyId]);
@@ -101,7 +101,10 @@ const VisualSurveyBuilder = () => {
   useEffect(() => {
     const autoSaveTimer = setTimeout(() => {
       if (saveStatus === "unsaved") {
-        localStorage.setItem('surveyforge_autosave', JSON.stringify(surveyData));
+        localStorage.setItem(
+          "surveyforge_autosave",
+          JSON.stringify(surveyData)
+        );
         setSaveStatus("saved");
       }
     }, 2000);
@@ -199,12 +202,12 @@ const VisualSurveyBuilder = () => {
     newSurveyData.pages[pageIndex].questions = newSurveyData?.pages?.[
       pageIndex
     ]?.questions?.filter((q) => q?.id !== questionId);
-    
+
     // ✅ Update orderIndex values after deletion
     newSurveyData.pages[pageIndex].questions.forEach((question, index) => {
       question.orderIndex = index;
     });
-    
+
     newSurveyData.pages[pageIndex].questionCount =
       newSurveyData?.pages?.[pageIndex]?.questions?.length;
 
@@ -241,12 +244,12 @@ const VisualSurveyBuilder = () => {
         0,
         duplicatedQuestion
       );
-      
+
       // ✅ Update orderIndex values for all questions after duplication
       newSurveyData.pages[pageIndex].questions.forEach((question, index) => {
         question.orderIndex = index;
       });
-      
+
       newSurveyData.pages[pageIndex].questionCount =
         newSurveyData?.pages?.[pageIndex]?.questions?.length;
 
@@ -261,7 +264,7 @@ const VisualSurveyBuilder = () => {
     const pageIndex = newSurveyData?.pages?.findIndex(
       (page) => page?.id === surveyData?.currentPageId
     );
-    
+
     if (pageIndex !== -1) {
       const questions = [...newSurveyData?.pages?.[pageIndex]?.questions];
 
@@ -282,14 +285,15 @@ const VisualSurveyBuilder = () => {
   };
 
   const handleDrop = (component, insertIndex) => {
-    
     // Generate unique name for the new question
     const questionName = `q_${Date.now()}`;
-    
+
     // Get the current questions to determine the next orderIndex
-    const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
+    const currentPage = surveyData?.pages?.find(
+      (page) => page.id === surveyData?.currentPageId
+    );
     const currentQuestions = currentPage?.questions || [];
-    
+
     const newQuestion = {
       id: questionName,
       name: questionName,
@@ -300,10 +304,24 @@ const VisualSurveyBuilder = () => {
       required: false,
       placeholder: "",
       orderIndex: insertIndex, // ✅ Set orderIndex to the insert position
-      options: component?.id === "radio" || component?.id === "checkbox" || component?.id === "dropdown" || component?.id === "multi-select" ? [
-        { id: `opt_${Date.now()}_1`, label: "Option 1", value: "option_1" },
-        { id: `opt_${Date.now()}_2`, label: "Option 2", value: "option_2" }
-      ] : [],
+      options:
+        component?.id === "radio" ||
+        component?.id === "checkbox" ||
+        component?.id === "dropdown" ||
+        component?.id === "multi-select"
+          ? [
+              {
+                id: `opt_${Date.now()}_1`,
+                label: "Option 1",
+                value: "option_1",
+              },
+              {
+                id: `opt_${Date.now()}_2`,
+                label: "Option 2",
+                value: "option_2",
+              },
+            ]
+          : [],
       validation: component?.defaultValidation || {},
       conditionalLogic: {
         enabled: false,
@@ -325,23 +343,23 @@ const VisualSurveyBuilder = () => {
         0,
         newQuestion
       );
-      
+
       // ✅ Update orderIndex values for all questions after insertion
       newSurveyData.pages[pageIndex].questions.forEach((question, index) => {
         question.orderIndex = index;
       });
-      
+
       newSurveyData.pages[pageIndex].questionCount =
         newSurveyData?.pages?.[pageIndex]?.questions?.length;
 
       setSurveyData(newSurveyData);
       addToHistory(newSurveyData);
       setSelectedQuestionId(newQuestion?.id);
-      
+
       // Return the new question ID for auto-scrolling
       return newQuestion.id;
     }
-    
+
     return null;
   };
 
@@ -419,7 +437,7 @@ const VisualSurveyBuilder = () => {
   const handleSave = async () => {
     setSaveStatus("saving");
     try {
-      localStorage.setItem('surveyforge_autosave', JSON.stringify(surveyData));
+      localStorage.setItem("surveyforge_autosave", JSON.stringify(surveyData));
       setSaveStatus("saved");
     } catch (error) {
       setSaveStatus("error");
@@ -433,25 +451,29 @@ const VisualSurveyBuilder = () => {
     try {
       // First validate and clean the data
       const validatedData = validateBackendData(surveyData);
-      
+
       // Then transform to backend format
       const backendData = transformToBackendFormat(validatedData);
-      
+
       if (surveyId) {
         // Update existing survey
         await surveyAPI.updateSurvey(surveyId, backendData);
       } else {
         // Create new survey
         const newSurvey = await surveyAPI.createSurvey(backendData);
-        setSurveyData(prev => ({ ...prev, id: newSurvey.id }));
+        setSurveyData((prev) => ({ ...prev, id: newSurvey.id }));
         // Update URL to include survey ID
         navigate(`/visual-survey-builder/${newSurvey.id}`, { replace: true });
       }
-      
+
       // Clear auto-saved data after successful API call
-      localStorage.removeItem('surveyforge_autosave');
+      localStorage.removeItem("surveyforge_autosave");
       setSaveStatus("saved");
-      alert(surveyId ? "Survey updated successfully!" : "Survey created successfully!");
+      alert(
+        surveyId
+          ? "Survey updated successfully!"
+          : "Survey created successfully!"
+      );
     } catch (error) {
       setSaveStatus("error");
       console.error("Error publishing/updating survey:", error);
@@ -476,7 +498,7 @@ const VisualSurveyBuilder = () => {
   };
 
   const handlePreview = () => {
-    setIsPreviewMode(prev => !prev);
+    setIsPreviewMode((prev) => !prev);
   };
 
   const handleExport = () => {
@@ -513,8 +535,8 @@ const VisualSurveyBuilder = () => {
   useEffect(() => {
     if (!surveyData || !surveyData?.pages || surveyData?.pages?.length === 0) {
       // Clear any existing auto-saved data when starting fresh
-      localStorage.removeItem('surveyforge_autosave');
-      
+      localStorage.removeItem("surveyforge_autosave");
+
       const emptySurvey = {
         id: `survey_${Date.now()}`,
         title: "Untitled Survey",
@@ -549,16 +571,18 @@ const VisualSurveyBuilder = () => {
       <div className="fixed top-[64px] w-full z-10 px-6 pt-2 bg-card border-b border-border">
         <div className="flex items-center justify-between">
           <Breadcrumb items={breadcrumbItems} />
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               console.log("=== DEBUG INFO ===");
               console.log("Survey ID from URL:", surveyId);
               console.log("Survey Data:", surveyData);
               console.log("Current Page ID:", surveyData?.currentPageId);
               console.log("All Pages:", surveyData?.pages);
-              const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
+              const currentPage = surveyData?.pages?.find(
+                (page) => page.id === surveyData?.currentPageId
+              );
               console.log("Current Page:", currentPage);
               console.log("Current Questions:", currentPage?.questions);
               console.log("Loading State:", isLoading);
@@ -583,31 +607,31 @@ const VisualSurveyBuilder = () => {
             onDragStart={handleDragStart}
             className="transition-all duration-300 ease-in-out"
           />
-          
+
           {/* Survey Canvas */}
-                  {isLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-text-secondary">Loading survey...</p>
+          {isLoading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-text-secondary">Loading survey...</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <SurveyCanvas
-            surveyData={surveyData}
-            onQuestionSelect={handleQuestionSelect}
-            selectedQuestionId={selectedQuestionId}
-            onQuestionUpdate={handleQuestionUpdate}
-            onQuestionDelete={handleQuestionDelete}
-            onQuestionDuplicate={handleQuestionDuplicate}
-            onQuestionReorder={handleQuestionReorder}
-            onDrop={handleDrop}
-            isPreviewMode={isPreviewMode}
-            onTogglePreview={handlePreview}
-            onSurveyDataUpdate={handleSurveyDataUpdate}
-          />
-        )}
-          
+          ) : (
+            <SurveyCanvas
+              surveyData={surveyData}
+              onQuestionSelect={handleQuestionSelect}
+              selectedQuestionId={selectedQuestionId}
+              onQuestionUpdate={handleQuestionUpdate}
+              onQuestionDelete={handleQuestionDelete}
+              onQuestionDuplicate={handleQuestionDuplicate}
+              onQuestionReorder={handleQuestionReorder}
+              onDrop={handleDrop}
+              isPreviewMode={isPreviewMode}
+              onTogglePreview={handlePreview}
+              onSurveyDataUpdate={handleSurveyDataUpdate}
+            />
+          )}
+
           {/* Properties Panel */}
           <PropertiesPanel
             selectedQuestion={selectedQuestion}

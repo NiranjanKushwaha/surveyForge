@@ -35,7 +35,11 @@ const FloatingToolbar = ({
           color: "var(--color-warning)",
         };
       case "saved":
-        return { icon: "Check", text: "Auto-saved", color: "var(--color-success)" };
+        return {
+          icon: "Check",
+          text: "Auto-saved",
+          color: "var(--color-success)",
+        };
       case "error":
         return {
           icon: "AlertCircle",
@@ -101,7 +105,10 @@ const FloatingToolbar = ({
 
   return (
     <>
-      <div id="floating-toolbar-container" className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 floating-toolbar-container">
+      <div
+        id="floating-toolbar-container"
+        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 floating-toolbar-container"
+      >
         <div className="bg-card border border-border rounded-lg survey-shadow-lg">
           {/* Main Toolbar */}
           <div className="flex items-center space-x-1 p-2">
@@ -165,7 +172,11 @@ const FloatingToolbar = ({
               size="sm"
               onClick={onPublishUpdate}
               iconName="Send"
-              title={saveStatus === "unsaved" ? "Publish/Update Survey to Server (Unsaved Changes)" : "Publish/Update Survey to Server"}
+              title={
+                saveStatus === "unsaved"
+                  ? "Publish/Update Survey to Server (Unsaved Changes)"
+                  : "Publish/Update Survey to Server"
+              }
               className="floating-toolbar-publish-button"
               id="floating-toolbar-publish-button"
             >
@@ -202,42 +213,32 @@ const FloatingToolbar = ({
                       className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-save-button"
                     >
                       <Icon name="Save" size={14} />
-                      <span>Save to Local Storage</span>
-                      <span className="ml-auto text-xs text-text-secondary">
+                      <small>Save to Local Storage</small>
+                      <small className="ml-auto text-xs text-text-secondary">
                         Ctrl+S
-                      </span>
+                      </small>
                     </button>
 
                     <button
                       onClick={() => {
-                        onExportSurvey(); // Call the new export function
+                        onExportSurvey();
                         setIsExpanded(false);
-                        showToast("Survey JSON copied to clipboard!"); // Show toast
+                        showToast("Survey JSON dowloaded successfully!");
                       }}
                       id="floating-toolbar-copy-json-button"
                       className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-copy-json-button"
                     >
                       <Icon name="Copy" size={14} />
-                      <span>Copy Survey JSON</span>
+                      <small>Download Survey JSON</small>
                     </button>
 
-                    <button
-                      onClick={handleOpenImportModal} // Call function to open import modal
-                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-import-button"
-                      id="floating-toolbar-import-button"
-                    >
-                      <Icon name="Upload" size={14} />
-                      <span>Import Survey</span>
-                    </button>
-
-                    {/* View JSON Button */}
                     <button
                       onClick={handleShowJson}
                       className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted survey-transition flex items-center space-x-2 floating-toolbar-view-json-button"
                       id="floating-toolbar-view-json-button"
                     >
                       <Icon name="Code" size={14} />
-                      <span>View Survey JSON</span>
+                      <small>View Survey JSON</small>
                     </button>
 
                     <div className="border-t border-border my-1" />
@@ -248,7 +249,7 @@ const FloatingToolbar = ({
                       id="floating-toolbar-help-button"
                     >
                       <Icon name="HelpCircle" size={14} />
-                      <span>Help & Shortcuts</span>
+                      <small>Help & Shortcuts</small>
                     </button>
                   </div>
                 </div>
@@ -312,7 +313,12 @@ const FloatingToolbar = ({
                 <span className="text-sm text-text-secondary">
                   {copyStatus}
                 </span>
-                <Button onClick={handleCopyJson} iconName="Copy" className="floating-toolbar-copy-json-modal-button" id="floating-toolbar-copy-json-modal-button">
+                <Button
+                  onClick={handleCopyJson}
+                  iconName="Copy"
+                  className="floating-toolbar-copy-json-modal-button"
+                  id="floating-toolbar-copy-json-modal-button"
+                >
                   Copy JSON
                 </Button>
               </div>
@@ -349,7 +355,12 @@ const FloatingToolbar = ({
                 />
               </div>
               <div className="p-4 border-t border-border text-right">
-                <Button id="floating-toolbar-import-modal-button" onClick={handleImportSubmit} iconName="Upload" className="floating-toolbar-import-modal-button">
+                <Button
+                  id="floating-toolbar-import-modal-button"
+                  onClick={handleImportSubmit}
+                  iconName="Upload"
+                  className="floating-toolbar-import-modal-button"
+                >
                   Import Survey
                 </Button>
               </div>
