@@ -32,19 +32,24 @@ export const transformToBackendFormat = (frontendData) => {
         name: String(page.name || ""),
         orderIndex: ensureNumber(page.orderIndex, 0),
         questions:
-          page.questions?.map((question) => ({
-            name: String(question.name || ""),
-            type: String(mapQuestionType(question.type) || "text"),
-            title: String(question.title || ""),
-            description: String(question.description || ""),
-            placeholder: String(question.placeholder || ""),
-            required: ensureBoolean(question.required, false),
-            orderIndex: ensureNumber(question.orderIndex, 0),
-            validation: parseJsonField(question.validation) || {},
-            conditionalLogic: parseJsonField(question.conditionalLogic) || {},
-            styling: parseJsonField(question.styling) || {},
-            options: ensureArray(question.options),
-          })) || [],
+          page.questions?.map((question) => {
+            // Ensure options are properly formatted before sending to backend
+            const formattedOptions = ensureOptionsArray(question.options);
+            
+            return {
+              name: String(question.name || ""),
+              type: String(mapQuestionType(question.type) || "text"),
+              title: String(question.title || ""),
+              description: String(question.description || ""),
+              placeholder: String(question.placeholder || ""),
+              required: ensureBoolean(question.required, false),
+              orderIndex: ensureNumber(question.orderIndex, 0),
+              validation: parseJsonField(question.validation) || {},
+              conditionalLogic: parseJsonField(question.conditionalLogic) || {},
+              styling: parseJsonField(question.styling) || {},
+              options: formattedOptions, // Send as array, backend should handle JSON stringification
+            };
+          }) || [],
       })) || [],
   };
 
@@ -61,6 +66,73 @@ const parseJsonField = (field) => {
     }
   }
   return field || {};
+};
+
+// Helper function to ensure options are properly formatted
+export const ensureOptionsArray = (field) => {
+  // If it's already an array, ensure each item has proper structure
+  if (Array.isArray(field)) {
+    // Handle the case where backend returns [[],[]] (empty arrays)
+    if (field.length > 0 && field.every(item => Array.isArray(item) && item.length === 0)) {
+      // This is the malformed case from backend, return default options
+      return [
+        { id: "opt_0", label: "Option 1", value: "option1" },
+        { id: "opt_1", label: "Option 2", value: "option2" },
+        { id: "opt_2", label: "Option 3", value: "option3" },
+      ];
+    }
+    
+    // Normal array processing
+    return field.map((option, index) => {
+      if (typeof option === "string") {
+        return { id: `opt_${index}`, label: option, value: option };
+      }
+      if (typeof option === "object" && option !== null) {
+        return {
+          id: option.id || `opt_${index}`,
+          label: option.label || option.value || `Option ${index + 1}`,
+          value: option.value || option.label || `option_${index + 1}`,
+        };
+      }
+      return { id: `opt_${index}`, label: `Option ${index + 1}`, value: `option_${index + 1}` };
+    });
+  }
+  
+  // If it's a string, try to parse it
+  if (typeof field === "string") {
+    try {
+      const parsed = JSON.parse(field);
+      
+      // Handle the case where backend returns "[[],[]]" (stringified empty arrays)
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(item => Array.isArray(item) && item.length === 0)) {
+        // This is the malformed case from backend, return default options
+        return [
+          { id: "opt_0", label: "Option 1", value: "option1" },
+          { id: "opt_1", label: "Option 2", value: "option2" },
+          { id: "opt_2", label: "Option 3", value: "option3" },
+        ];
+      }
+      
+      if (Array.isArray(parsed)) {
+        return ensureOptionsArray(parsed);
+      }
+    } catch (error) {
+      // If parsing fails, treat as comma-separated string
+      const options = field.split(',').map((opt, index) => ({
+        id: `opt_${index}`,
+        label: opt.trim(),
+        value: opt.trim().toLowerCase().replace(/\s+/g, '_')
+      }));
+      return options;
+    }
+  }
+  
+  // Return default options if nothing else works
+  return [
+    { id: "opt_0", label: "Option 1", value: "option1" },
+    { id: "opt_1", label: "Option 2", value: "option2" },
+    { id: "opt_2", label: "Option 3", value: "option3" },
+  ];
 };
 
 // Helper function to ensure a field is always an array
@@ -166,26 +238,30 @@ export const transformToFrontendFormat = (backendData) => {
         orderIndex: page.orderIndex || index,
         questionCount: page.questions?.length || 0,
         questions:
-          page.questions?.map((question) => ({
-            id: question.id,
-            name: question.name,
-            type: mapBackendQuestionType(question.type), // Map backend types to frontend types
-            title: question.title,
-            description: question.description,
-            placeholder: question.placeholder,
-            required: question.required || false,
-            orderIndex: question.orderIndex || 0,
-            validation: parseJsonField(question.validation) || {},
-            conditionalLogic: parseJsonField(question.conditionalLogic) || {},
-            styling: parseJsonField(question.styling) || {},
-            options: ensureArray(question.options),
-            // Frontend-specific properties
-            icon: getQuestionIcon(mapBackendQuestionType(question.type)),
-            logic: {
-              enabled:
-                parseJsonField(question.conditionalLogic)?.enabled || false,
-            },
-          })) || [],
+          page.questions?.map((question) => {
+            const transformedOptions = ensureOptionsArray(question.options);
+            
+            return {
+              id: question.id,
+              name: question.name,
+              type: mapBackendQuestionType(question.type), // Map backend types to frontend types
+              title: question.title,
+              description: question.description,
+              placeholder: question.placeholder,
+              required: question.required || false,
+              orderIndex: question.orderIndex || 0,
+              validation: parseJsonField(question.validation) || {},
+              conditionalLogic: parseJsonField(question.conditionalLogic) || {},
+              styling: parseJsonField(question.styling) || {},
+              options: transformedOptions,
+              // Frontend-specific properties
+              icon: getQuestionIcon(mapBackendQuestionType(question.type)),
+              logic: {
+                enabled:
+                  parseJsonField(question.conditionalLogic)?.enabled || false,
+              },
+            };
+          }) || [],
       })) || [],
   };
 };
@@ -202,6 +278,10 @@ const mapBackendQuestionType = (backendType) => {
     select: "dropdown",
     date: "date",
     number: "number",
+    phone: "phone",
+    "text-input": "text-input",
+    dropdown: "dropdown",
+    "multi-select": "checkbox",
   };
   return typeMap[backendType] || backendType;
 };
@@ -219,6 +299,9 @@ const getQuestionIcon = (type) => {
     date: "Calendar",
     number: "Hash",
     phone: "Phone",
+    "multi-select": "CheckSquare",
+    select: "ChevronDown",
+    text: "Type",
   };
   return iconMap[type] || "HelpCircle";
 };
@@ -256,7 +339,6 @@ export const transformSurveyListData = (backendSurveys) => {
 
 // Validate and clean data before sending to backend
 export const validateBackendData = (data) => {
-  console.log("🔍 Validating backend data:", data);
   const cleaned = { ...data };
 
   // Ensure all questions have unique orderIndex values
@@ -270,20 +352,25 @@ export const validateBackendData = (data) => {
 
       if (page.questions && Array.isArray(page.questions)) {
         cleanedPage.questions = page.questions.map(
-          (question, questionIndex) => ({
-            ...question,
-            name: String(question.name || ""),
-            type: String(question.type || "text"),
-            title: String(question.title || ""),
-            description: String(question.description || ""),
-            placeholder: String(question.placeholder || ""),
-            required: ensureBoolean(question.required, false),
-            orderIndex: questionIndex,
-            validation: parseJsonField(question.validation),
-            conditionalLogic: parseJsonField(question.conditionalLogic),
-            styling: parseJsonField(question.styling),
-            options: ensureArray(question.options),
-          })
+          (question, questionIndex) => {
+            // Ensure options are properly formatted
+            const formattedOptions = ensureOptionsArray(question.options);
+            
+            return {
+              ...question,
+              name: String(question.name || ""),
+              type: String(question.type || "text"),
+              title: String(question.title || ""),
+              description: String(question.description || ""),
+              placeholder: String(question.placeholder || ""),
+              required: ensureBoolean(question.required, false),
+              orderIndex: questionIndex,
+              validation: parseJsonField(question.validation),
+              conditionalLogic: parseJsonField(question.conditionalLogic),
+              styling: parseJsonField(question.styling),
+              options: formattedOptions,
+            };
+          }
         );
       } else {
         cleanedPage.questions = [];
@@ -321,37 +408,6 @@ export const validateBackendData = (data) => {
       cleaned.theme = {};
     }
   }
-
-  console.log("✅ Validated and cleaned data:", cleaned);
-
-  // Final check: Log the structure of the cleaned data
-  console.log("🔍 Final data structure check:");
-  console.log("- title type:", typeof cleaned.title, "value:", cleaned.title);
-  console.log(
-    "- description type:",
-    typeof cleaned.description,
-    "value:",
-    cleaned.description
-  );
-  console.log(
-    "- isPublic type:",
-    typeof cleaned.isPublic,
-    "value:",
-    cleaned.isPublic
-  );
-  console.log(
-    "- allowAnonymous type:",
-    typeof cleaned.allowAnonymous,
-    "value:",
-    cleaned.allowAnonymous
-  );
-  console.log(
-    "- expiresAt type:",
-    typeof cleaned.expiresAt,
-    "value:",
-    cleaned.expiresAt
-  );
-  console.log("- pages count:", cleaned.pages?.length || 0);
 
   return cleaned;
 };

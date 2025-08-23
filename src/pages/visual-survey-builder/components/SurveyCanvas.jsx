@@ -1446,26 +1446,25 @@ const SurveyCanvas = ({
 
               // Handle different question types and map them to SurveyViewer supported types
               switch (question.type) {
+                case "text":
+                case "text-input":
+                case "email":
+                case "phone":
+                  transformedQuestion.type = "text-input"; // Map to generic text input for viewer
+                  transformedQuestion.placeholder =
+                    question.placeholder || "Your answer...";
+                  break;
+                case "number":
+                  transformedQuestion.type = "number-input"; // Use a specific type for number if viewer supports it
+                  transformedQuestion.placeholder =
+                    question.placeholder || "Enter a number...";
+                  break;
                 case "star-rating":
                   transformedQuestion.type = "rating";
                   transformedQuestion.scale = 5;
                   break;
-                case "number":
-                  transformedQuestion.type = "text-input";
-                  transformedQuestion.placeholder =
-                    question.placeholder || "Enter a number...";
-                  break;
-                case "matrix-single":
-                  // Keep matrix-single type for proper rendering
-                  transformedQuestion.type = "matrix-single";
-                  break;
-                case "matrix-multiple":
-                  // Keep matrix-multiple type for proper rendering
-                  transformedQuestion.type = "matrix-multiple";
-                  break;
                 case "likert":
-                  // Convert likert to radio with scale options
-                  transformedQuestion.type = "radio";
+                  transformedQuestion.type = "radio"; // Convert likert to radio with scale options
                   transformedQuestion.options = [
                     { id: "opt1", label: "Strongly Disagree", value: "1" },
                     { id: "opt2", label: "Disagree", value: "2" },
@@ -1474,8 +1473,46 @@ const SurveyCanvas = ({
                     { id: "opt5", label: "Strongly Agree", value: "5" },
                   ];
                   break;
+                case "nps":
+                  transformedQuestion.type = "nps"; // Keep NPS type
+                  transformedQuestion.scale = 10; // NPS typically 0-10
+                  break;
+                case "slider":
+                  transformedQuestion.type = "slider"; // Keep slider type
+                  transformedQuestion.min = 0;
+                  transformedQuestion.max = 100;
+                  transformedQuestion.step = 1;
+                  break;
+                case "date-picker":
+                  transformedQuestion.type = "date";
+                  break;
+                case "time-picker":
+                  transformedQuestion.type = "time";
+                  break;
+                case "file-upload":
+                  transformedQuestion.type = "file";
+                  break;
+                case "signature":
+                  transformedQuestion.type = "signature";
+                  break;
+                case "location":
+                  transformedQuestion.type = "location";
+                  break;
+                case "matrix-single":
+                case "matrix-multiple":
+                case "ranking":
+                case "radio":
+                case "checkbox":
+                case "dropdown":
+                case "multi-select":
+                case "textarea":
+                  // These types are likely supported directly by SurveyViewer
+                  break;
                 default:
-                  // Keep original type if it's already supported
+                  console.warn(
+                    `Unknown question type encountered: ${question.type}. Defaulting to text-input.`
+                  );
+                  transformedQuestion.type = "text-input";
                   break;
               }
 
