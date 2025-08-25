@@ -18,8 +18,6 @@ const SurveyCanvas = ({
   onTogglePreview,
   onSurveyDataUpdate, // Add this prop for updating survey data
 }) => {
-  
-  // Clean state management
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [previewMode, setPreviewMode] = useState("default");
   const [isJsonEditorOpen, setIsJsonEditorOpen] = useState(false);
@@ -30,18 +28,18 @@ const SurveyCanvas = ({
   const [jsonEditorHistory, setJsonEditorHistory] = useState([]);
   const [jsonEditorHistoryIndex, setJsonEditorHistoryIndex] = useState(-1);
   const [lastAddedQuestionId, setLastAddedQuestionId] = useState(null);
-  
+
   // Simple drag state
   const [draggedQuestionId, setDraggedQuestionId] = useState(null);
   const [dragOverQuestionId, setDragOverQuestionId] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  
+
   // Add missing dragScrollInterval state
   const [dragScrollInterval, setDragScrollInterval] = useState(null);
-  
+
   // Add mouse position tracking for drag scroll
   const [mouseY, setMouseY] = useState(0);
-  
+
   const canvasRef = useRef(null);
   const jsonEditorRef = useRef(null);
 
@@ -49,8 +47,8 @@ const SurveyCanvas = ({
   const handleQuestionDragStart = useCallback((e, questionId) => {
     setDraggedQuestionId(questionId);
     setIsDragging(true);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', questionId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", questionId);
   }, []);
 
   const handleQuestionDragEnd = useCallback(() => {
@@ -59,64 +57,78 @@ const SurveyCanvas = ({
     setIsDragging(false);
   }, []);
 
-  const handleQuestionDragOver = useCallback((e, questionId) => {
-    e.preventDefault();
-    if (draggedQuestionId && draggedQuestionId !== questionId) {
-      setDragOverQuestionId(questionId);
-    }
-  }, [draggedQuestionId]);
+  const handleQuestionDragOver = useCallback(
+    (e, questionId) => {
+      e.preventDefault();
+      if (draggedQuestionId && draggedQuestionId !== questionId) {
+        setDragOverQuestionId(questionId);
+      }
+    },
+    [draggedQuestionId]
+  );
 
   const handleQuestionDragLeave = useCallback(() => {
     setDragOverQuestionId(null);
   }, []);
 
-  const handleQuestionDrop = useCallback((e, targetQuestionId) => {
-    e.preventDefault();
-    
-    if (draggedQuestionId && draggedQuestionId !== targetQuestionId) {
-      const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
-      const currentQuestions = currentPage?.questions || [];
-      
-      const fromIndex = currentQuestions.findIndex(q => q.id === draggedQuestionId);
-      const toIndex = currentQuestions.findIndex(q => q.id === targetQuestionId);
-      
-      if (fromIndex !== -1 && toIndex !== -1) {
-        if (onQuestionReorder) {
-          onQuestionReorder(fromIndex, toIndex);
-        } else {
-          // Fallback: manually reorder questions
-          const newQuestions = [...currentQuestions];
-          const [movedQuestion] = newQuestions.splice(fromIndex, 1);
-          newQuestions.splice(toIndex, 0, movedQuestion);
-          
-          if (onSurveyDataUpdate) {
-            const newSurveyData = {
-              ...surveyData,
-              pages: surveyData.pages.map(page => 
-                page.id === surveyData.currentPageId 
-                  ? { ...page, questions: newQuestions }
-                  : page
-              )
-            };
-            onSurveyDataUpdate(newSurveyData);
+  const handleQuestionDrop = useCallback(
+    (e, targetQuestionId) => {
+      e.preventDefault();
+
+      if (draggedQuestionId && draggedQuestionId !== targetQuestionId) {
+        const currentPage = surveyData?.pages?.find(
+          (page) => page.id === surveyData?.currentPageId
+        );
+        const currentQuestions = currentPage?.questions || [];
+
+        const fromIndex = currentQuestions.findIndex(
+          (q) => q.id === draggedQuestionId
+        );
+        const toIndex = currentQuestions.findIndex(
+          (q) => q.id === targetQuestionId
+        );
+
+        if (fromIndex !== -1 && toIndex !== -1) {
+          if (onQuestionReorder) {
+            onQuestionReorder(fromIndex, toIndex);
+          } else {
+            // Fallback: manually reorder questions
+            const newQuestions = [...currentQuestions];
+            const [movedQuestion] = newQuestions.splice(fromIndex, 1);
+            newQuestions.splice(toIndex, 0, movedQuestion);
+
+            if (onSurveyDataUpdate) {
+              const newSurveyData = {
+                ...surveyData,
+                pages: surveyData.pages.map((page) =>
+                  page.id === surveyData.currentPageId
+                    ? { ...page, questions: newQuestions }
+                    : page
+                ),
+              };
+              onSurveyDataUpdate(newSurveyData);
+            }
           }
         }
       }
-    }
-    
-    setDraggedQuestionId(null);
-    setDragOverQuestionId(null);
-    setIsDragging(false);
-  }, [draggedQuestionId, surveyData, onQuestionReorder, onSurveyDataUpdate]);
+
+      setDraggedQuestionId(null);
+      setDragOverQuestionId(null);
+      setIsDragging(false);
+    },
+    [draggedQuestionId, surveyData, onQuestionReorder, onSurveyDataUpdate]
+  );
 
   // Auto-scroll to newly added question
   useEffect(() => {
     if (lastAddedQuestionId) {
-      const questionElement = document.getElementById(`survey-canvas-question-${lastAddedQuestionId}`);
+      const questionElement = document.getElementById(
+        `survey-canvas-question-${lastAddedQuestionId}`
+      );
       if (questionElement) {
-        questionElement.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
+        questionElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
         });
         setLastAddedQuestionId(null);
       }
@@ -124,14 +136,17 @@ const SurveyCanvas = ({
   }, [lastAddedQuestionId]);
 
   // JSON Editor History Management
-  const addToJsonHistory = useCallback((value) => {
-    setJsonEditorHistory(prev => {
-      const newHistory = prev.slice(0, jsonEditorHistoryIndex + 1);
-      newHistory.push(value);
-      return newHistory.slice(-50); // Keep last 50 states
-    });
-    setJsonEditorHistoryIndex(prev => Math.min(prev + 1, 49));
-  }, [jsonEditorHistoryIndex]);
+  const addToJsonHistory = useCallback(
+    (value) => {
+      setJsonEditorHistory((prev) => {
+        const newHistory = prev.slice(0, jsonEditorHistoryIndex + 1);
+        newHistory.push(value);
+        return newHistory.slice(-50); // Keep last 50 states
+      });
+      setJsonEditorHistoryIndex((prev) => Math.min(prev + 1, 49));
+    },
+    [jsonEditorHistoryIndex]
+  );
 
   const undoJsonChange = useCallback(() => {
     if (jsonEditorHistoryIndex > 0) {
@@ -173,59 +188,67 @@ const SurveyCanvas = ({
   const saveJsonChanges = useCallback(() => {
     try {
       const parsedData = JSON.parse(jsonEditorValue);
-      
+
       // Fix the data structure to match what the app expects
       const fixedData = {
         ...parsedData,
-        currentPageId: parsedData.currentPageId || (parsedData.pages && parsedData.pages[0] ? parsedData.pages[0].id : "page_1"),
-        pages: parsedData.pages ? parsedData.pages.map(page => ({
-          ...page,
-          questions: page.questions ? page.questions.map(question => {
-            // Parse options if they're stored as JSON string
-            let options = question.options;
-            if (typeof options === 'string' && options) {
-              try {
-                options = JSON.parse(options);
-              } catch (e) {
-                console.warn('Failed to parse options:', options);
-                options = [];
-              }
-            }
-            
-            // Set default icon based on question type
-            let icon = question.icon || "Type";
-            switch (question.type) {
-              case "text":
-              case "text-input":
-                icon = "Type";
-                break;
-              case "email":
-                icon = "Mail";
-                break;
-              case "textarea":
-                icon = "FileText";
-                break;
-              case "radio":
-                icon = "Circle";
-                break;
-              case "checkbox":
-                icon = "CheckSquare";
-                break;
-              default:
-                icon = "Type";
-            }
-            
-            return {
-              ...question,
-              options: options || [],
-              icon: icon
-            };
-          }) : []
-        })) : []
+        currentPageId:
+          parsedData.currentPageId ||
+          (parsedData.pages && parsedData.pages[0]
+            ? parsedData.pages[0].id
+            : "page_1"),
+        pages: parsedData.pages
+          ? parsedData.pages.map((page) => ({
+              ...page,
+              questions: page.questions
+                ? page.questions.map((question) => {
+                    // Parse options if they're stored as JSON string
+                    let options = question.options;
+                    if (typeof options === "string" && options) {
+                      try {
+                        options = JSON.parse(options);
+                      } catch (e) {
+                        console.warn("Failed to parse options:", options);
+                        options = [];
+                      }
+                    }
+
+                    // Set default icon based on question type
+                    let icon = question.icon || "Type";
+                    switch (question.type) {
+                      case "text":
+                      case "text-input":
+                        icon = "Type";
+                        break;
+                      case "email":
+                        icon = "Mail";
+                        break;
+                      case "textarea":
+                        icon = "FileText";
+                        break;
+                      case "radio":
+                        icon = "Circle";
+                        break;
+                      case "checkbox":
+                        icon = "CheckSquare";
+                        break;
+                      default:
+                        icon = "Type";
+                    }
+
+                    return {
+                      ...question,
+                      options: options || [],
+                      icon: icon,
+                    };
+                  })
+                : [],
+            }))
+          : [],
       };
-      
+
       console.log("Fixed data:", fixedData);
-      
+
       if (onSurveyDataUpdate) {
         onSurveyDataUpdate(fixedData);
       }
@@ -251,56 +274,59 @@ const SurveyCanvas = ({
     }
   }, []);
 
-  const handleJsonEditorChange = useCallback((value) => {
-    setJsonEditorValue(value);
-    validateJSON(value);
-  }, [validateJSON]);
+  const handleJsonEditorChange = useCallback(
+    (value) => {
+      setJsonEditorValue(value);
+      validateJSON(value);
+    },
+    [validateJSON]
+  );
 
   // Auto-scroll during drag operations
   const startDragScroll = useCallback(() => {
     if (dragScrollInterval) return;
-    
+
     const interval = setInterval(() => {
       if (!isDragging) return;
-      
+
       const canvas = canvasRef.current;
       if (!canvas) return;
-      
+
       // Get mouse position from tracked state
       const currentMouseY = mouseY;
       const rect = canvas.getBoundingClientRect();
       const scrollSpeed = 35; // Much faster scrolling for better responsiveness
       const scrollThreshold = 60; // Smaller threshold for earlier activation
-      
+
       // Calculate scroll zones with more aggressive detection
       const topZone = rect.top + scrollThreshold;
       const bottomZone = rect.bottom - scrollThreshold;
-      
+
       // Add extra scroll zones at the very edges for easier activation
       const edgeZone = 40;
-      
+
       if (currentMouseY < rect.top + edgeZone) {
         // Very top edge - super fast scroll
         canvas.scrollTop -= scrollSpeed * 2;
-        showScrollIndicator('top');
+        showScrollIndicator("top");
       } else if (currentMouseY < topZone) {
         // Top zone - normal scroll
         canvas.scrollTop -= scrollSpeed;
-        showScrollIndicator('top');
+        showScrollIndicator("top");
       } else if (currentMouseY > rect.bottom - edgeZone) {
         // Very bottom edge - super fast scroll
         canvas.scrollTop += scrollSpeed * 2;
-        showScrollIndicator('bottom');
+        showScrollIndicator("bottom");
       } else if (currentMouseY > bottomZone) {
         // Bottom zone - normal scroll
         canvas.scrollTop += scrollSpeed;
-        showScrollIndicator('bottom');
+        showScrollIndicator("bottom");
       } else {
         // Hide indicators when in middle
         hideScrollIndicators();
       }
     }, 8); // Even higher frequency for ultra-smooth scrolling
-    
+
     setDragScrollInterval(interval);
   }, [isDragging, dragScrollInterval]);
 
@@ -316,20 +342,20 @@ const SurveyCanvas = ({
   const showScrollIndicator = (position) => {
     let indicator = document.getElementById(`scroll-indicator-${position}`);
     if (!indicator) {
-      indicator = document.createElement('div');
+      indicator = document.createElement("div");
       indicator.id = `scroll-indicator-${position}`;
       indicator.className = `scroll-indicator-${position}`;
-      indicator.innerHTML = position === 'top' ? '↑' : '↓';
+      indicator.innerHTML = position === "top" ? "↑" : "↓";
       document.body.appendChild(indicator);
     }
-    indicator.style.display = 'flex';
+    indicator.style.display = "flex";
   };
 
   const hideScrollIndicators = () => {
-    const topIndicator = document.getElementById('scroll-indicator-top');
-    const bottomIndicator = document.getElementById('scroll-indicator-bottom');
-    if (topIndicator) topIndicator.style.display = 'none';
-    if (bottomIndicator) bottomIndicator.style.display = 'none';
+    const topIndicator = document.getElementById("scroll-indicator-top");
+    const bottomIndicator = document.getElementById("scroll-indicator-bottom");
+    if (topIndicator) topIndicator.style.display = "none";
+    if (bottomIndicator) bottomIndicator.style.display = "none";
   };
 
   // Cleanup on unmount
@@ -346,8 +372,8 @@ const SurveyCanvas = ({
       setMouseY(e.clientY);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    return () => document.removeEventListener('mousemove', handleMouseMove);
+    document.addEventListener("mousemove", handleMouseMove);
+    return () => document.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
   // Add keyboard shortcuts for faster navigation
@@ -356,19 +382,19 @@ const SurveyCanvas = ({
       if (!isJsonEditorOpen && !isPreviewMode) {
         if (e.ctrlKey || e.metaKey) {
           switch (e.key) {
-            case 'z':
+            case "z":
               e.preventDefault();
               // Could implement undo for question operations here
               break;
-            case 'y':
+            case "y":
               e.preventDefault();
               // Could implement redo for question operations here
               break;
-            case 's':
+            case "s":
               e.preventDefault();
               // Could implement save here
               break;
-            case 'p':
+            case "p":
               e.preventDefault();
               onTogglePreview();
               break;
@@ -377,8 +403,8 @@ const SurveyCanvas = ({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isJsonEditorOpen, isPreviewMode, onTogglePreview]);
 
   const handleDragOver = (e) => {
@@ -390,7 +416,9 @@ const SurveyCanvas = ({
     );
 
     // Get questions from current page
-    const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
+    const currentPage = surveyData?.pages?.find(
+      (page) => page.id === surveyData?.currentPageId
+    );
     const currentQuestions = currentPage?.questions || [];
     let insertIndex = currentQuestions?.length;
 
@@ -416,64 +444,15 @@ const SurveyCanvas = ({
       const componentData = JSON.parse(
         e?.dataTransfer?.getData("application/json")
       );
-      
-      console.log("Component data received in SurveyCanvas:", componentData); // Debug log
-      
-      // Pass the component data directly to the parent component
+
       const newQuestionId = onDrop(componentData, dragOverIndex);
-      
-      // Set the newly added question ID for auto-scrolling
+
       if (newQuestionId) {
         setLastAddedQuestionId(newQuestionId);
       }
     } catch (error) {
       console.error("Error handling drop:", error);
     }
-  };
-
-  // Generate unique question name based on type and existing questions
-  const generateUniqueQuestionName = (questionType, currentSurveyData) => {
-    const typeMap = {
-      'text': 'text_input',
-      'text-input': 'text_input',
-      'textarea': 'textarea',
-      'email': 'email',
-      'number': 'number',
-      'phone': 'phone',
-      'radio': 'radio_selection',
-      'checkbox': 'checkbox_selection',
-      'dropdown': 'dropdown_selection',
-      'multi-select': 'multi_select',
-      'star-rating': 'star_rating',
-      'likert': 'likert_scale',
-      'nps': 'nps_score',
-      'slider': 'slider',
-      'matrix-single': 'matrix_single',
-      'matrix-multiple': 'matrix_multiple',
-      'ranking': 'ranking',
-      'date-picker': 'date_picker',
-      'time-picker': 'time_picker',
-      'file-upload': 'file_upload',
-      'signature': 'signature',
-      'location': 'location'
-    };
-
-    const baseName = typeMap[questionType] || 'question';
-    let counter = 1;
-    let questionName = `${baseName}_${counter}`;
-
-    // Get all existing question names from the survey
-    const existingNames = currentSurveyData?.pages?.flatMap(page => 
-      page?.questions?.map(q => q.name) || []
-    ) || [];
-
-    // Find a unique name
-    while (existingNames.includes(questionName)) {
-      counter++;
-      questionName = `${baseName}_${counter}`;
-    }
-
-    return questionName;
   };
 
   const handleDragLeave = (e) => {
@@ -483,7 +462,6 @@ const SurveyCanvas = ({
   };
 
   const renderQuestion = (question, index) => {
-    
     const isSelected = selectedQuestionId === question?.id;
     const isDragging = draggedQuestionId === question?.id;
     const isDragOver = dragOverQuestionId === question?.id;
@@ -494,12 +472,12 @@ const SurveyCanvas = ({
         {dragOverIndex === index && (
           <div className="h-2 bg-gradient-to-r from-primary to-blue-500 rounded-full mb-3 survey-transition drop-indicator" />
         )}
-        
+
         {/* Drag over indicator for reordering */}
         {isDragOver && (
           <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mb-3 survey-transition drop-indicator" />
         )}
-        
+
         <div
           data-question-index={index}
           draggable={true}
@@ -527,21 +505,17 @@ const SurveyCanvas = ({
               : isDragOver
               ? "border-blue-400 bg-blue-50 scale-[1.01] shadow-lg"
               : "border-border hover:border-primary/50 hover:bg-muted/50 hover:scale-[1.005] hover:shadow-md"
-          } ${isDragging ? 'dragging' : ''}`}
+          } ${isDragging ? "dragging" : ""}`}
           id={`survey-canvas-question-${question?.id}`}
           style={{
-            transform: isDragging ? 'rotate(2deg) scale(0.95)' : 'none',
-            zIndex: isDragging ? 1000 : 'auto'
+            transform: isDragging ? "rotate(2deg) scale(0.95)" : "none",
+            zIndex: isDragging ? 1000 : "auto",
           }}
         >
           {/* Enhanced Drag Handle */}
           <div className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 survey-transition">
             <div className="p-2 hover:bg-blue-100 rounded-full cursor-grab active:cursor-grabbing transition-all duration-200 hover:scale-110">
-              <Icon
-                name="GripVertical"
-                size={18}
-                className="text-blue-500"
-              />
+              <Icon name="GripVertical" size={18} className="text-blue-500" />
             </div>
           </div>
 
@@ -565,7 +539,9 @@ const SurveyCanvas = ({
                     {question?.type}
                   </span>
                   {question?.required && (
-                    <span className="text-xs text-error bg-red-50 px-2 py-1 rounded-full">Required</span>
+                    <span className="text-xs text-error bg-red-50 px-2 py-1 rounded-full">
+                      Required
+                    </span>
                   )}
                   {question?.conditionalLogic?.enabled && (
                     <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full flex items-center">
@@ -643,13 +619,11 @@ const SurveyCanvas = ({
   };
 
   const renderQuestionPreview = (question) => {
-    
     const inputClasses = clsx(
       "w-full transition-all duration-200",
       previewMode === "form"
-        ? "px-4 py-3 border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
-        : "px-3 py-2 border-border rounded-md",
-      "border bg-background text-foreground placeholder:text-text-secondary"
+        ? "px-4 py-3 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-foreground placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base"
+        : "px-3 py-2 border border-border rounded bg-background text-foreground"
     );
 
     switch (question?.type) {
@@ -660,7 +634,15 @@ const SurveyCanvas = ({
       case "phone":
         return (
           <input
-            type={question?.type === "number" ? "number" : question?.type === "email" ? "email" : question?.type === "phone" ? "tel" : "text"}
+            type={
+              question?.type === "number"
+                ? "number"
+                : question?.type === "email"
+                ? "email"
+                : question?.type === "phone"
+                ? "tel"
+                : "text"
+            }
             placeholder={question?.placeholder || "Your answer..."}
             className={inputClasses}
             disabled={previewMode !== "form"}
@@ -677,139 +659,137 @@ const SurveyCanvas = ({
           />
         );
 
-
-
       case "radio":
         return (
           <div className={clsx("space-y-3", previewMode === "form" && "mt-2")}>
-            {(question?.options && question?.options?.length > 0) ? question?.options?.map((option, index) => (
-              <label
-                key={index}
-                className={clsx(
-                  "flex items-center gap-3 cursor-pointer",
-                  previewMode === "form" &&
-                    "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                )}
-              >
-                <input
-                  type="radio"
-                  name={`preview-${question?.id}`}
-                  disabled={previewMode !== "form"}
-                  className={clsx(
-                    "text-primary",
-                    previewMode === "form" && "h-5 w-5"
-                  )}
-                />
-                <span
-                  className={clsx(
-                    "text-foreground",
-                    previewMode === "form" ? "text-base" : "text-sm"
-                  )}
-                >
-                  {option?.label}
-                </span>
-              </label>
-            )) : (
-              // Show default radio options if none configured
-              [
-                { label: "Option 1", value: "option1" },
-                { label: "Option 2", value: "option2" },
-                { label: "Option 3", value: "option3" }
-              ].map((option, index) => (
-                <label
-                  key={index}
-                  className={clsx(
-                    "flex items-center gap-3 cursor-pointer",
-                    previewMode === "form" &&
-                      "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name={`preview-${question?.id}`}
-                    disabled={previewMode !== "form"}
+            {question?.options && question?.options?.length > 0
+              ? question?.options?.map((option, index) => (
+                  <label
+                    key={index}
                     className={clsx(
-                      "text-primary",
-                      previewMode === "form" && "h-5 w-5"
-                    )}
-                  />
-                  <span
-                    className={clsx(
-                      "text-foreground",
-                      previewMode === "form" ? "text-base" : "text-sm"
+                      "flex items-center gap-3 cursor-pointer",
+                      previewMode === "form" &&
+                        "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                     )}
                   >
-                    {option?.label}
-                  </span>
-                </label>
-              ))
-            )}
+                    <input
+                      type="radio"
+                      name={`preview-${question?.id}`}
+                      disabled={previewMode !== "form"}
+                      className={clsx(
+                        "text-primary",
+                        previewMode === "form" && "h-5 w-5"
+                      )}
+                    />
+                    <span
+                      className={clsx(
+                        "text-foreground",
+                        previewMode === "form" ? "text-base" : "text-sm"
+                      )}
+                    >
+                      {option?.label}
+                    </span>
+                  </label>
+                ))
+              : // Show default radio options if none configured
+                [
+                  { label: "Option 1", value: "option1" },
+                  { label: "Option 2", value: "option2" },
+                  { label: "Option 3", value: "option3" },
+                ].map((option, index) => (
+                  <label
+                    key={index}
+                    className={clsx(
+                      "flex items-center gap-3 cursor-pointer",
+                      previewMode === "form" &&
+                        "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name={`preview-${question?.id}`}
+                      disabled={previewMode !== "form"}
+                      className={clsx(
+                        "text-primary",
+                        previewMode === "form" && "h-5 w-5"
+                      )}
+                    />
+                    <span
+                      className={clsx(
+                        "text-foreground",
+                        previewMode === "form" ? "text-base" : "text-sm"
+                      )}
+                    >
+                      {option?.label}
+                    </span>
+                  </label>
+                ))}
           </div>
         );
 
       case "checkbox":
         return (
           <div className={clsx("space-y-3", previewMode === "form" && "mt-2")}>
-            {(question?.options && question?.options?.length > 0) ? question?.options?.map((option, index) => (
-              <label
-                key={index}
-                className={clsx(
-                  "flex items-center gap-3 cursor-pointer",
-                  previewMode === "form" &&
-                    "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                )}
-              >
-                <input
-                  type="checkbox"
-                  disabled={previewMode !== "form"}
-                  className={clsx(
-                    "text-primary rounded",
-                    previewMode === "form" && "h-5 w-5"
-                  )}
-                />
-                <span
-                  className={clsx(
-                    "text-foreground",
-                    previewMode === "form" ? "text-base" : "text-sm"
-                  )}
-                >
-                  {option?.label}
-                </span>
-              </label>
-            )) : (
-              // Show default checkbox options if none configured
-              [
-                { label: "Option 1", value: "option1" },
-                { label: "Option 2", value: "option2" },
-                { label: "Option 3", value: "option3" }
-              ].map((option, index) => (
-                <label
-                  key={index}
-                  className={clsx(
-                    "flex items-center gap-3 cursor-pointer",
-                    previewMode === "form" &&
-                      "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    disabled={previewMode !== "form"}
+            {question?.options && question?.options?.length > 0
+              ? question?.options?.map((option, index) => (
+                  <label
+                    key={index}
                     className={clsx(
-                      "text-primary rounded",
-                      previewMode === "form" && "h-5 w-5"
-                    )}
-                  />
-                  <span
-                    className={clsx(
-                      "text-foreground",
-                      previewMode === "form" ? "text-base" : "text-sm"
+                      "flex items-center gap-3 cursor-pointer",
+                      previewMode === "form" &&
+                        "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                     )}
                   >
-                    {option?.label}
-                  </span>
-                </label>
-              ))
-            )}
+                    <input
+                      type="checkbox"
+                      disabled={previewMode !== "form"}
+                      className={clsx(
+                        "text-primary rounded",
+                        previewMode === "form" && "h-5 w-5"
+                      )}
+                    />
+                    <span
+                      className={clsx(
+                        "text-foreground",
+                        previewMode === "form" ? "text-base" : "text-sm"
+                      )}
+                    >
+                      {option?.label}
+                    </span>
+                  </label>
+                ))
+              : // Show default checkbox options if none configured
+                [
+                  { label: "Option 1", value: "option1" },
+                  { label: "Option 2", value: "option2" },
+                  { label: "Option 3", value: "option3" },
+                ].map((option, index) => (
+                  <label
+                    key={index}
+                    className={clsx(
+                      "flex items-center gap-3 cursor-pointer",
+                      previewMode === "form" &&
+                        "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      disabled={previewMode !== "form"}
+                      className={clsx(
+                        "text-primary rounded",
+                        previewMode === "form" && "h-5 w-5"
+                      )}
+                    />
+                    <span
+                      className={clsx(
+                        "text-foreground",
+                        previewMode === "form" ? "text-base" : "text-sm"
+                      )}
+                    >
+                      {option?.label}
+                    </span>
+                  </label>
+                ))}
           </div>
         );
 
@@ -826,88 +806,88 @@ const SurveyCanvas = ({
             disabled={previewMode !== "form"}
           >
             <option value="">Select an option...</option>
-            {(question?.options && question?.options?.length > 0) ? question?.options?.map((option, index) => (
-              <option key={index} value={option?.value}>
-                {option?.label}
-              </option>
-            )) : (
-              // Show default dropdown options if none configured
-              [
-                { label: "Option 1", value: "option1" },
-                { label: "Option 2", value: "option2" },
-                { label: "Option 3", value: "option3" }
-              ].map((option, index) => (
-                <option key={index} value={option?.value}>
-                  {option?.label}
-                </option>
-              ))
-            )}
+            {question?.options && question?.options?.length > 0
+              ? question?.options?.map((option, index) => (
+                  <option key={index} value={option?.value}>
+                    {option?.label}
+                  </option>
+                ))
+              : // Show default dropdown options if none configured
+                [
+                  { label: "Option 1", value: "option1" },
+                  { label: "Option 2", value: "option2" },
+                  { label: "Option 3", value: "option3" },
+                ].map((option, index) => (
+                  <option key={index} value={option?.value}>
+                    {option?.label}
+                  </option>
+                ))}
           </select>
         );
 
       case "multi-select":
         return (
           <div className={clsx("space-y-3", previewMode === "form" && "mt-2")}>
-            {(question?.options && question?.options?.length > 0) ? question?.options?.map((option, index) => (
-              <label
-                key={index}
-                className={clsx(
-                  "flex items-center gap-3 cursor-pointer",
-                  previewMode === "form" &&
-                    "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                )}
-              >
-                <input
-                  type="checkbox"
-                  disabled={previewMode !== "form"}
-                  className={clsx(
-                    "text-primary rounded",
-                    previewMode === "form" && "h-5 w-5"
-                  )}
-                />
-                <span
-                  className={clsx(
-                    "text-foreground",
-                    previewMode === "form" ? "text-base" : "text-sm"
-                  )}
-                >
-                  {option?.label}
-                </span>
-              </label>
-            )) : (
-              // Show default multi-select options if none configured
-              [
-                { label: "Option 1", value: "option1" },
-                { label: "Option 2", value: "option2" },
-                { label: "Option 3", value: "option3" }
-              ].map((option, index) => (
-                <label
-                  key={index}
-                  className={clsx(
-                    "flex items-center gap-3 cursor-pointer",
-                    previewMode === "form" &&
-                      "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    disabled={previewMode !== "form"}
+            {question?.options && question?.options?.length > 0
+              ? question?.options?.map((option, index) => (
+                  <label
+                    key={index}
                     className={clsx(
-                      "text-primary rounded",
-                      previewMode === "form" && "h-5 w-5"
-                    )}
-                  />
-                  <span
-                    className={clsx(
-                      "text-foreground",
-                      previewMode === "form" ? "text-base" : "text-sm"
+                      "flex items-center gap-3 cursor-pointer",
+                      previewMode === "form" &&
+                        "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                     )}
                   >
-                    {option?.label}
-                  </span>
-                </label>
-              ))
-            )}
+                    <input
+                      type="checkbox"
+                      disabled={previewMode !== "form"}
+                      className={clsx(
+                        "text-primary rounded",
+                        previewMode === "form" && "h-5 w-5"
+                      )}
+                    />
+                    <span
+                      className={clsx(
+                        "text-foreground",
+                        previewMode === "form" ? "text-base" : "text-sm"
+                      )}
+                    >
+                      {option?.label}
+                    </span>
+                  </label>
+                ))
+              : // Show default multi-select options if none configured
+                [
+                  { label: "Option 1", value: "option1" },
+                  { label: "Option 2", value: "option2" },
+                  { label: "Option 3", value: "option3" },
+                ].map((option, index) => (
+                  <label
+                    key={index}
+                    className={clsx(
+                      "flex items-center gap-3 cursor-pointer",
+                      previewMode === "form" &&
+                        "p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      disabled={previewMode !== "form"}
+                      className={clsx(
+                        "text-primary rounded",
+                        previewMode === "form" && "h-5 w-5"
+                      )}
+                    />
+                    <span
+                      className={clsx(
+                        "text-foreground",
+                        previewMode === "form" ? "text-base" : "text-sm"
+                      )}
+                    >
+                      {option?.label}
+                    </span>
+                  </label>
+                ))}
           </div>
         );
 
@@ -922,20 +902,21 @@ const SurveyCanvas = ({
             {[1, 2, 3, 4, 5]?.map((star) => (
               <button
                 key={star}
+                type="button"
                 className={clsx(
                   "transition-all duration-200 survey-canvas-star-rating-button",
                   previewMode === "form"
-                    ? "p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full hover:scale-110"
+                    ? "p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     : "cursor-default"
                 )}
                 id={`survey-canvas-star-rating-button-${star}`}
                 disabled={previewMode !== "form"}
-                title={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                title={`Rate ${star} star${star > 1 ? "s" : ""}`}
               >
                 <Icon
                   name="Star"
                   size={previewMode === "form" ? 20 : 18}
-                  className="text-zinc-300 hover:text-yellow-400 transition-colors"
+                  className="text-yellow-400 transition-colors"
                 />
               </button>
             ))}
@@ -985,7 +966,7 @@ const SurveyCanvas = ({
                     type="radio"
                     name={`likert-${question?.id}`}
                     value={point}
-                    disabled={!previewMode === "form"}
+                    disabled={previewMode !== "form"}
                     className={clsx("sr-only")}
                   />
                   <div
@@ -1015,8 +996,12 @@ const SurveyCanvas = ({
         return (
           <div className="space-y-3">
             <div className="text-center mb-3">
-              <p className="text-sm text-text-secondary mb-2">How likely are you to recommend us?</p>
-              <p className="text-xs text-text-secondary">0 = Not at all likely, 10 = Extremely likely</p>
+              <p className="text-sm text-text-secondary mb-2">
+                How likely are you to recommend us?
+              </p>
+              <p className="text-xs text-text-secondary">
+                0 = Not at all likely, 10 = Extremely likely
+              </p>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-text-secondary">0</span>
@@ -1024,10 +1009,11 @@ const SurveyCanvas = ({
                 {Array.from({ length: 11 }, (_, i) => (
                   <button
                     key={i}
+                    type="button"
                     className={clsx(
                       "w-7 h-7 rounded border-2 transition-colors",
                       previewMode === "form"
-                        ? "border-gray-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer hover:scale-110"
+                        ? "border-gray-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/20"
                         : "border-gray-200 cursor-default"
                     )}
                     disabled={previewMode !== "form"}
@@ -1040,7 +1026,9 @@ const SurveyCanvas = ({
               <span className="text-xs text-text-secondary">10</span>
             </div>
             <div className="text-center text-xs text-text-secondary">
-              {previewMode === "form" ? "Click a number to rate" : "NPS rating scale"}
+              {previewMode === "form"
+                ? "Click a number to rate"
+                : "NPS rating scale"}
             </div>
           </div>
         );
@@ -1061,7 +1049,10 @@ const SurveyCanvas = ({
               max="100"
               defaultValue="50"
               step="1"
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              className={clsx(
+                "w-full h-2 bg-gray-200 rounded-lg appearance-none slider",
+                previewMode === "form" ? "cursor-pointer" : "cursor-default"
+              )}
               disabled={previewMode !== "form"}
             />
             <div className="text-center">
@@ -1189,54 +1180,56 @@ const SurveyCanvas = ({
       case "ranking":
         return (
           <div className="space-y-2">
-            {(question?.options && question?.options?.length > 0) ? question?.options?.map((option, index) => (
-              <div
-                key={index}
-                className={clsx(
-                  "flex items-center gap-3 p-2 border rounded-lg",
-                  previewMode === "form"
-                    ? "border-gray-200 hover:border-gray-300 cursor-move"
-                    : "border-gray-100"
-                )}
-              >
-                <div className="flex-shrink-0 w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
-                  {index + 1}
-                </div>
-                <span className="flex-1 text-sm">{option?.label || `Option ${index + 1}`}</span>
-                <Icon
-                  name="GripVertical"
-                  size={14}
-                  className="text-gray-400"
-                />
-              </div>
-            )) : (
-              // Show default ranking options if none configured
-              [
-                { label: "Option 1", value: "option1" },
-                { label: "Option 2", value: "option2" },
-                { label: "Option 3", value: "option3" }
-              ].map((option, index) => (
-                <div
-                  key={index}
-                  className={clsx(
-                    "flex items-center gap-3 p-2 border rounded-lg",
-                    previewMode === "form"
-                      ? "border-gray-200 hover:border-gray-300 cursor-move"
-                      : "border-gray-100"
-                  )}
-                >
-                  <div className="flex-shrink-0 w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
-                    {index + 1}
-                </div>
-                <span className="flex-1 text-sm">{option?.label}</span>
-                <Icon
-                  name="GripVertical"
-                  size={14}
-                  className="text-gray-400"
-                />
-              </div>
-              ))
-            )}
+            {question?.options && question?.options?.length > 0
+              ? question?.options?.map((option, index) => (
+                  <div
+                    key={index}
+                    className={clsx(
+                      "flex items-center gap-3 p-2 border rounded-lg",
+                      previewMode === "form"
+                        ? "border-gray-200 hover:border-gray-300 cursor-move"
+                        : "border-gray-100"
+                    )}
+                  >
+                    <div className="flex-shrink-0 w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
+                      {index + 1}
+                    </div>
+                    <span className="flex-1 text-sm">
+                      {option?.label || `Option ${index + 1}`}
+                    </span>
+                    <Icon
+                      name="GripVertical"
+                      size={14}
+                      className="text-gray-400"
+                    />
+                  </div>
+                ))
+              : // Show default ranking options if none configured
+                [
+                  { label: "Option 1", value: "option1" },
+                  { label: "Option 2", value: "option2" },
+                  { label: "Option 3", value: "option3" },
+                ].map((option, index) => (
+                  <div
+                    key={index}
+                    className={clsx(
+                      "flex items-center gap-3 p-2 border rounded-lg",
+                      previewMode === "form"
+                        ? "border-gray-200 hover:border-gray-300 cursor-move"
+                        : "border-gray-100"
+                    )}
+                  >
+                    <div className="flex-shrink-0 w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
+                      {index + 1}
+                    </div>
+                    <span className="flex-1 text-sm">{option?.label}</span>
+                    <Icon
+                      name="GripVertical"
+                      size={14}
+                      className="text-gray-400"
+                    />
+                  </div>
+                ))}
           </div>
         );
 
@@ -1274,19 +1267,23 @@ const SurveyCanvas = ({
 
       case "file-upload":
         return (
-          <div className={clsx(
-            "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
-            previewMode === "form"
-              ? "border-gray-300 hover:border-gray-400 cursor-pointer hover:bg-gray-50"
-              : "border-gray-200"
-          )}>
+          <div
+            className={clsx(
+              "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
+              previewMode === "form"
+                ? "border-gray-300 hover:border-gray-400 cursor-pointer hover:bg-gray-50"
+                : "border-gray-200"
+            )}
+          >
             <Icon
               name="Upload"
               size={20}
               className="mx-auto mb-2 text-gray-400"
             />
             <p className="text-sm text-gray-600 mb-1">
-              {previewMode === "form" ? "Click to upload files" : "File upload area"}
+              {previewMode === "form"
+                ? "Click to upload files"
+                : "File upload area"}
             </p>
             <p className="text-xs text-gray-500">
               Drag and drop files here or click to browse
@@ -1301,12 +1298,14 @@ const SurveyCanvas = ({
 
       case "signature":
         return (
-          <div className={clsx(
-            "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
-            previewMode === "form"
-              ? "border-gray-300 hover:border-gray-400 cursor-pointer hover:bg-gray-50"
-              : "border-gray-200"
-          )}>
+          <div
+            className={clsx(
+              "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
+              previewMode === "form"
+                ? "border-gray-300 hover:border-gray-400 cursor-pointer hover:bg-gray-50"
+                : "border-gray-200"
+            )}
+          >
             <Icon
               name="PenTool"
               size={20}
@@ -1315,9 +1314,7 @@ const SurveyCanvas = ({
             <p className="text-sm text-gray-600 mb-1">
               {previewMode === "form" ? "Click to sign" : "Signature area"}
             </p>
-            <p className="text-xs text-gray-500">
-              Draw your signature here
-            </p>
+            <p className="text-xs text-gray-500">Draw your signature here</p>
             {previewMode === "form" && (
               <div className="mt-3 text-xs text-gray-400">
                 Use mouse or touch to draw signature
@@ -1328,19 +1325,23 @@ const SurveyCanvas = ({
 
       case "location":
         return (
-          <div className={clsx(
-            "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
-            previewMode === "form"
-              ? "border-gray-300 hover:border-gray-400 cursor-pointer hover:bg-gray-50"
-              : "border-gray-200"
-          )}>
+          <div
+            className={clsx(
+              "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
+              previewMode === "form"
+                ? "border-gray-300 hover:border-gray-400 cursor-pointer hover:bg-gray-50"
+                : "border-gray-200"
+            )}
+          >
             <Icon
               name="MapPin"
               size={20}
               className="mx-auto mb-2 text-gray-400"
             />
             <p className="text-sm text-gray-600 mb-1">
-              {previewMode === "form" ? "Click to set location" : "Location picker"}
+              {previewMode === "form"
+                ? "Click to set location"
+                : "Location picker"}
             </p>
             <p className="text-xs text-gray-500">
               Select your location on the map
@@ -1366,7 +1367,8 @@ const SurveyCanvas = ({
               className="mx-auto mb-2"
             />
             <p className="text-sm text-text-secondary">
-              Preview not available for question type: {question?.type || 'unknown'}
+              Preview not available for question type:{" "}
+              {question?.type || "unknown"}
             </p>
             <p className="text-xs text-text-secondary mt-1">
               This question type may need additional configuration
@@ -1388,66 +1390,96 @@ const SurveyCanvas = ({
         {
           id: "preview_page",
           name: "Survey Questions",
-          questions: data.questions?.map((question) => {
-            const transformedQuestion = { ...question };
-            
-            // Handle different question types and map them to SurveyViewer supported types
-            switch (question.type) {
-              case "star-rating":
-                transformedQuestion.type = "rating";
-                transformedQuestion.scale = 5;
-                break;
-              case "number":
-                transformedQuestion.type = "text-input";
-                transformedQuestion.placeholder = question.placeholder || "Enter a number...";
-                break;
-              case "matrix-single":
-                // Convert matrix single to radio with options
-                transformedQuestion.type = "radio";
-                if (!transformedQuestion.options) {
+          questions:
+            data.questions?.map((question) => {
+              const transformedQuestion = { ...question };
+
+              // Handle different question types and map them to SurveyViewer supported types
+              switch (question.type) {
+                case "text":
+                case "text-input":
+                case "email":
+                case "phone":
+                  transformedQuestion.type = "text-input"; // Map to generic text input for viewer
+                  transformedQuestion.placeholder =
+                    question.placeholder || "Your answer...";
+                  break;
+                case "number":
+                  transformedQuestion.type = "number-input"; // Use a specific type for number if viewer supports it
+                  transformedQuestion.placeholder =
+                    question.placeholder || "Enter a number...";
+                  break;
+                case "star-rating":
+                  transformedQuestion.type = "rating";
+                  transformedQuestion.scale = 5;
+                  break;
+                case "likert":
+                  transformedQuestion.type = "radio"; // Convert likert to radio with scale options
                   transformedQuestion.options = [
-                    { id: "opt1", label: "Option 1", value: "option1" },
-                    { id: "opt2", label: "Option 2", value: "option2" }
+                    { id: "opt1", label: "Strongly Disagree", value: "1" },
+                    { id: "opt2", label: "Disagree", value: "2" },
+                    { id: "opt3", label: "Neutral", value: "3" },
+                    { id: "opt4", label: "Agree", value: "4" },
+                    { id: "opt5", label: "Strongly Agree", value: "5" },
                   ];
-                }
-                break;
-              case "matrix-multiple":
-                // Convert matrix multiple to checkbox with options
-                transformedQuestion.type = "checkbox";
-                if (!transformedQuestion.options) {
-                  transformedQuestion.options = [
-                    { id: "opt1", label: "Option 1", value: "option1" },
-                    { id: "opt2", label: "Option 2", value: "option2" }
-                  ];
-                }
-                break;
-              case "likert":
-                // Convert likert to radio with scale options
-                transformedQuestion.type = "radio";
-                transformedQuestion.options = [
-                  { id: "opt1", label: "Strongly Disagree", value: "1" },
-                  { id: "opt2", label: "Disagree", value: "2" },
-                  { id: "opt3", label: "Neutral", value: "3" },
-                  { id: "opt4", label: "Agree", value: "4" },
-                  { id: "opt5", label: "Strongly Agree", value: "5" }
-                ];
-                break;
-              default:
-                // Keep original type if it's already supported
-                break;
-            }
-            
-            return transformedQuestion;
-          }) || []
-        }
-      ]
+                  break;
+                case "nps":
+                  transformedQuestion.type = "nps"; // Keep NPS type
+                  transformedQuestion.scale = 10; // NPS typically 0-10
+                  break;
+                case "slider":
+                  transformedQuestion.type = "slider"; // Keep slider type
+                  transformedQuestion.min = 0;
+                  transformedQuestion.max = 100;
+                  transformedQuestion.step = 1;
+                  break;
+                case "date-picker":
+                  transformedQuestion.type = "date";
+                  break;
+                case "time-picker":
+                  transformedQuestion.type = "time";
+                  break;
+                case "file-upload":
+                  transformedQuestion.type = "file";
+                  break;
+                case "signature":
+                  transformedQuestion.type = "signature";
+                  break;
+                case "location":
+                  transformedQuestion.type = "location";
+                  break;
+                case "matrix-single":
+                case "matrix-multiple":
+                case "ranking":
+                case "radio":
+                case "checkbox":
+                case "dropdown":
+                case "multi-select":
+                case "textarea":
+                  // These types are likely supported directly by SurveyViewer
+                  break;
+                default:
+                  console.warn(
+                    `Unknown question type encountered: ${question.type}. Defaulting to text-input.`
+                  );
+                  transformedQuestion.type = "text-input";
+                  break;
+              }
+
+              return transformedQuestion;
+            }) || [],
+        },
+      ],
     };
-    
+
     return transformedData;
   };
 
   return (
-    <div id="survey-canvas-container" className="flex-1 bg-surface flex flex-col survey-canvas-container">
+    <div
+      id="survey-canvas-container"
+      className="flex-1 bg-surface flex flex-col survey-canvas-container"
+    >
       {/* Canvas Header */}
       <div className="bg-card border-b border-border p-4">
         <div className="flex items-center justify-between">
@@ -1455,20 +1487,24 @@ const SurveyCanvas = ({
             <input
               type="text"
               value={surveyData?.title || "Untitled Survey"}
-              onChange={(e) => onSurveyDataUpdate?.({
-                ...surveyData,
-                title: e.target.value
-              })}
+              onChange={(e) =>
+                onSurveyDataUpdate?.({
+                  ...surveyData,
+                  title: e.target.value,
+                })
+              }
               className="text-xl font-semibold text-foreground bg-transparent border-none outline-none focus:bg-background focus:px-2 focus:py-1 focus:rounded survey-transition"
               placeholder="Enter survey title..."
             />
             <input
               type="text"
               value={surveyData?.description || ""}
-              onChange={(e) => onSurveyDataUpdate?.({
-                ...surveyData,
-                description: e.target.value
-              })}
+              onChange={(e) =>
+                onSurveyDataUpdate?.({
+                  ...surveyData,
+                  description: e.target.value,
+                })
+              }
               className="text-sm text-text-secondary bg-transparent border-none outline-none focus:bg-background focus:px-2 focus:py-1 focus:rounded survey-transition mt-1 w-full"
               placeholder="Enter survey description..."
             />
@@ -1494,19 +1530,27 @@ const SurveyCanvas = ({
             >
               JSON Editor
             </Button>
-            <Button id="survey-canvas-settings-button" variant="outline" size="sm" iconName="Settings" className="survey-canvas-settings-button">
+            <Button
+              id="survey-canvas-settings-button"
+              variant="outline"
+              size="sm"
+              iconName="Settings"
+              className="survey-canvas-settings-button"
+            >
               Settings
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              iconName="Info" 
+            <Button
+              variant="outline"
+              size="sm"
+              iconName="Info"
               onClick={() => {
                 console.log("=== DEBUG INFO ===");
                 console.log("Survey Data:", surveyData);
                 console.log("Current Page ID:", surveyData?.currentPageId);
                 console.log("All Pages:", surveyData?.pages);
-                const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
+                const currentPage = surveyData?.pages?.find(
+                  (page) => page.id === surveyData?.currentPageId
+                );
                 console.log("Current Page:", currentPage);
                 console.log("Current Questions:", currentPage?.questions);
                 alert("Check console for debug info");
@@ -1521,53 +1565,66 @@ const SurveyCanvas = ({
       <div
         ref={canvasRef}
         className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${
-          isDragging ? 'drag-scroll-zone' : ''
+          isDragging ? "drag-scroll-zone" : ""
         }`}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onDragLeave={handleDragLeave}
       >
-
-        
         {(() => {
-          const currentPage = surveyData?.pages?.find(page => page.id === surveyData?.currentPageId);
+          const currentPage = surveyData?.pages?.find(
+            (page) => page.id === surveyData?.currentPageId
+          );
           const currentQuestions = currentPage?.questions || [];
-          
+
           if (currentQuestions?.length === 0) {
             return (
               <div className="flex flex-col items-center justify-center h-96 text-center">
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Icon name="Plus" size={24} color="var(--color-text-secondary)" />
+                  <Icon
+                    name="Plus"
+                    size={24}
+                    color="var(--color-text-secondary)"
+                  />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-2">
                   Start Building Your Survey
                 </h3>
                 <p className="text-text-secondary max-w-md">
-                  Drag components from the left panel to begin creating your survey.
-                  You can reorder questions and customize them as needed.
+                  Drag components from the left panel to begin creating your
+                  survey. You can reorder questions and customize them as
+                  needed.
                 </p>
               </div>
             );
           }
-          
+
           return (
             <div className="space-y-4 max-w-4xl mx-auto">
               {/* Enhanced Drag Scroll Zone Indicator */}
               {isDragging && (
                 <div className="text-center text-sm text-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4 shadow-sm">
                   <div className="flex items-center justify-center space-x-2 mb-2">
-                    <Icon name="MousePointer" size={16} className="text-blue-600" />
+                    <Icon
+                      name="MousePointer"
+                      size={16}
+                      className="text-blue-600"
+                    />
                     <span className="font-semibold">🎯 Drag & Drop Active</span>
                   </div>
                   <p className="text-blue-700">
-                    <strong>Move your mouse to the top or bottom edges to scroll quickly</strong>
+                    <strong>
+                      Move your mouse to the top or bottom edges to scroll
+                      quickly
+                    </strong>
                   </p>
                   <div className="mt-2 text-xs text-blue-600">
-                    💡 Tip: You can drag questions anywhere in the canvas to reorder them
+                    💡 Tip: You can drag questions anywhere in the canvas to
+                    reorder them
                   </div>
                 </div>
               )}
-              
+
               {/* Questions with enhanced spacing */}
               <div className="space-y-6">
                 {currentQuestions?.map((question, index) =>
@@ -1589,8 +1646,11 @@ const SurveyCanvas = ({
         createPortal(
           <>
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998]" onClick={onTogglePreview} />
-            
+            <div
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998]"
+              onClick={onTogglePreview}
+            />
+
             {/* Preview Modal */}
             <div id="survey-canvas-preview-container" className="preview-modal">
               {/* Preview Header */}
@@ -1600,7 +1660,8 @@ const SurveyCanvas = ({
                     {surveyData?.title || "Survey Preview"}
                   </h2>
                   <p className="text-sm text-text-secondary mt-1">
-                    {surveyData?.description || "Preview your survey in different modes"}
+                    {surveyData?.description ||
+                      "Preview your survey in different modes"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1634,11 +1695,17 @@ const SurveyCanvas = ({
               <div className="preview-modal-content">
                 {(() => {
                   // Get all questions from all pages for comprehensive preview
-                  const allQuestions = surveyData?.pages?.flatMap(page => page?.questions || []) || [];
-                  
+                  const allQuestions =
+                    surveyData?.pages?.flatMap(
+                      (page) => page?.questions || []
+                    ) || [];
+
                   if (allQuestions.length === 0) {
                     return (
-                      <div id="survey-canvas-preview-no-questions-content" className="flex flex-col items-center justify-center h-full text-center p-6">
+                      <div
+                        id="survey-canvas-preview-no-questions-content"
+                        className="flex flex-col items-center justify-center h-full text-center p-6"
+                      >
                         <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4">
                           <Icon
                             name="FileQuestion"
@@ -1650,29 +1717,33 @@ const SurveyCanvas = ({
                           No Questions Yet
                         </h3>
                         <p className="text-text-secondary max-w-md">
-                          Add some questions to your survey to preview how it will
-                          look.
+                          Add some questions to your survey to preview how it
+                          will look.
                         </p>
                       </div>
                     );
                   }
-                  
+
                   return (
-                    <div className="p-6">
+                    <div className="p-6 overflow-y-auto max-h-screen">
                       {(() => {
                         const transformedData = transformDataForSurveyViewer({
                           ...surveyData,
-                          questions: allQuestions
+                          questions: allQuestions,
                         });
-                        
-                        if (!transformedData || !transformedData.pages || transformedData.pages.length === 0) {
+
+                        if (
+                          !transformedData ||
+                          !transformedData.pages ||
+                          transformedData.pages.length === 0
+                        ) {
                           return (
                             <div className="text-center py-8 text-text-secondary">
                               Unable to preview survey data
                             </div>
                           );
                         }
-                        
+
                         return (
                           <SurveyViewer
                             key={`preview-${previewMode}`} // Force re-render when mode changes
@@ -1681,21 +1752,33 @@ const SurveyCanvas = ({
                             submitButton={{
                               label: "Complete Survey",
                               variant: "primary",
-                              className: "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                              className:
+                                "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl",
                             }}
                             customStyles={{
                               container: "max-w-none",
-                              input: "border-border bg-background text-foreground",
+                              input:
+                                "border-border bg-background text-foreground",
                               label: "text-foreground",
-                              error: "text-error"
+                              error: "text-error",
                             }}
                             onSubmit={(submissionData) => {
-                              console.log("Preview form submitted:", submissionData);
+                              console.log(
+                                "Preview form submitted:",
+                                submissionData
+                              );
                               // In preview mode, we just log the data with enhanced information
-                              alert(`Preview: Survey completed!\n\nTotal Questions: ${submissionData.totalQuestions}\nAnswered Questions: ${submissionData.answeredQuestions}\n\nCheck console for full data.`);
+                              alert(
+                                `Preview: Survey completed!\n\nTotal Questions: ${submissionData.totalQuestions}\nAnswered Questions: ${submissionData.answeredQuestions}\n\nCheck console for full data.`
+                              );
                             }}
                             onQuestionChange={(questionId, value, allData) => {
-                              console.log("Question changed:", questionId, value, allData);
+                              console.log(
+                                "Question changed:",
+                                questionId,
+                                value,
+                                allData
+                              );
                               // In preview mode, we just log the changes
                             }}
                             initialValues={{}}
@@ -1760,23 +1843,35 @@ const SurveyCanvas = ({
               {/* Footer */}
               <div className="p-4 border-t border-border bg-surface">
                 <div className="flex items-center justify-between text-sm text-text-secondary">
-                  <span>JSON Editor - Make sure to maintain valid JSON syntax</span>
+                  <span>
+                    JSON Editor - Make sure to maintain valid JSON syntax
+                  </span>
                   <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      isJsonValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {isJsonValid ? 'Valid JSON' : 'Invalid JSON'}
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        isJsonValid
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {isJsonValid ? "Valid JSON" : "Invalid JSON"}
                     </span>
                     <span>{jsonEditorValue.length} characters</span>
                   </div>
                 </div>
-                
+
                 {/* Validation Errors */}
                 {jsonValidationErrors.length > 0 && (
                   <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
                     <div className="flex items-center space-x-2 mb-2">
-                      <Icon name="AlertCircle" size={16} color="var(--color-error)" />
-                      <h4 className="font-semibold text-red-800">JSON Validation Errors:</h4>
+                      <Icon
+                        name="AlertCircle"
+                        size={16}
+                        color="var(--color-error)"
+                      />
+                      <h4 className="font-semibold text-red-800">
+                        JSON Validation Errors:
+                      </h4>
                     </div>
                     <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
                       {jsonValidationErrors.map((error, index) => (

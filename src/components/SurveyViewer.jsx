@@ -431,6 +431,30 @@ const SurveyViewer = ({
           </div>
         );
 
+      case "number-input":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label htmlFor={questionId} className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <input
+              type="number"
+              id={questionId}
+              name={questionId}
+              value={value || ""}
+              onChange={(e) => handleInputChange(questionId, e?.target?.value)}
+              placeholder={question?.placeholder || "Enter a number..."}
+              className={baseInputClasses}
+              required={question?.required}
+            />
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
       case "dropdown":
         return (
           <div key={questionId} className={`mb-6 ${questionWidth}`}>
@@ -460,8 +484,287 @@ const SurveyViewer = ({
           </div>
         );
 
+      case "nps":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">0</span>
+              <div className="flex gap-1">
+                {Array.from({ length: (question?.scale || 10) + 1 }, (_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleInputChange(questionId, i)}
+                    className={cn(
+                      "w-8 h-8 rounded border-2 flex items-center justify-center text-sm font-medium transition-colors",
+                      value === i
+                        ? "bg-blue-500 border-blue-500 text-white"
+                        : "border-gray-300 text-gray-600 hover:border-blue-300"
+                    )}
+                  >
+                    {i}
+                  </button>
+                ))}
+              </div>
+              <span className="text-sm text-gray-600">{question?.scale || 10}</span>
+            </div>
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "slider":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label htmlFor={questionId} className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <input
+              type="range"
+              id={questionId}
+              name={questionId}
+              min={question?.min || 0}
+              max={question?.max || 100}
+              step={question?.step || 1}
+              value={value || (question?.min || 0)}
+              onChange={(e) => handleInputChange(questionId, Number(e?.target?.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <div className="flex justify-between text-xs text-gray-600 mt-2">
+              <span>{question?.min || 0}</span>
+              <span>{question?.max || 100}</span>
+            </div>
+            <div className="text-center mt-2">
+              <span className="text-sm font-medium">{value || (question?.min || 0)}</span>
+            </div>
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "matrix-single":
+      case "matrix-multiple":
+        const rows = question?.rows || [{ id: "row1", label: "Row 1" }];
+        const columns = question?.columns || [{ id: "col1", label: "Column 1" }];
+        const inputType = question?.type === "matrix-single" ? "radio" : "checkbox";
+
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-md">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                    {columns.map((col) => (
+                      <th key={col.id} className="px-4 py-2 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {col.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {rows.map((row) => (
+                    <tr key={row.id}>
+                      <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {row.label}
+                      </td>
+                      {columns.map((col) => (
+                        <td key={col.id} className="px-4 py-2 whitespace-nowrap text-center">
+                          <input
+                            type={inputType}
+                            name={`matrix-${questionId}-${row.id}`}
+                            value={col.id}
+                            checked={
+                              inputType === "radio"
+                                ? value?.[row.id] === col.id
+                                : value?.[row.id]?.includes(col.id)
+                            }
+                            onChange={(e) => {
+                              let newMatrixValue = { ...value };
+                              if (inputType === "radio") {
+                                newMatrixValue[row.id] = e.target.value;
+                              } else {
+                                let rowValues = newMatrixValue[row.id] || [];
+                                if (e.target.checked) {
+                                  rowValues.push(e.target.value);
+                                } else {
+                                  rowValues = rowValues.filter(
+                                    (val) => val !== e.target.value
+                                  );
+                                }
+                                newMatrixValue[row.id] = rowValues;
+                              }
+                              handleInputChange(questionId, newMatrixValue);
+                            }}
+                            className="text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "ranking":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <div className="space-y-2">
+              {question?.options?.map((option, index) => (
+                <div
+                  key={option?.id}
+                  className="flex items-center gap-3 p-2 border border-gray-200 rounded-lg bg-gray-50"
+                >
+                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
+                    {index + 1}
+                  </div>
+                  <span className="flex-1 text-sm text-gray-700">{option?.label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              (Ranking functionality is for display only in preview)
+            </p>
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "date":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label htmlFor={questionId} className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <input
+              type="date"
+              id={questionId}
+              name={questionId}
+              value={value || ""}
+              onChange={(e) => handleInputChange(questionId, e?.target?.value)}
+              className={baseInputClasses}
+              required={question?.required}
+            />
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "time":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label htmlFor={questionId} className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <input
+              type="time"
+              id={questionId}
+              name={questionId}
+              value={value || ""}
+              onChange={(e) => handleInputChange(questionId, e?.target?.value)}
+              className={baseInputClasses}
+              required={question?.required}
+            />
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "file":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label htmlFor={questionId} className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <input
+              type="file"
+              id={questionId}
+              name={questionId}
+              onChange={(e) => handleInputChange(questionId, e?.target?.files?.[0])}
+              className={baseInputClasses}
+              required={question?.required}
+            />
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "signature":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <div className="border border-gray-300 rounded-md h-32 flex items-center justify-center text-gray-500 italic">
+              Signature Pad (Preview Only)
+            </div>
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "location":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <div className="border border-gray-300 rounded-md h-32 flex items-center justify-center text-gray-500 italic">
+              Map Picker (Preview Only)
+            </div>
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
       default:
-        return null;
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <p className="text-red-500">
+              Unsupported question type: {question?.type}
+            </p>
+          </div>
+        );
     }
   }, [formData, errors, handleInputChange, shouldShowQuestion, mode, customStyles]);
 

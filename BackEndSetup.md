@@ -1,7 +1,16 @@
 # SurveyForge Backend Setup Guide
 
 ## Overview
-This guide provides a comprehensive setup for the SurveyForge backend application using NestJS, MSSQL, TypeORM, class-validators, and Swagger. The backend will handle survey CRUD operations, response management
+This guide provides a comprehensive setup for the SurveyForge backend application using NestJS, MSSQL, TypeORM, class-validators, and Swagger. The backend handles survey CRUD operations, response management, and provides a robust API for the React.js frontend application.
+
+## Current Integration Status
+✅ **Fully Integrated** - The frontend application is successfully connected to the NestJS backend with the following features:
+- Survey CRUD operations via REST API
+- Real-time data transformation between frontend and backend formats
+- JWT-based authentication system
+- Comprehensive error handling and validation
+- Auto-save functionality with local storage fallback
+- JSON import/export capabilities
 
 ## Table of Contents
 1. [Project Structure](#project-structure)
@@ -1052,6 +1061,220 @@ export default () => ({
 - Maintain README files for each module
 - Document database schema changes
 - Keep deployment guides updated
+
+## Frontend-Backend Integration
+
+### API Service Layer (`src/services/api.js`)
+The frontend communicates with the backend through a comprehensive API service layer:
+
+```javascript
+// Survey API services
+export const surveyAPI = {
+  // Get all surveys
+  getSurveys: async (filters = {}) => {
+    const response = await api.get('/surveys', { params: { filters } });
+    return response.data;
+  },
+
+  // Get survey by ID
+  getSurvey: async (id) => {
+    const response = await api.get(`/surveys/${id}`);
+    return response.data;
+  },
+
+  // Create new survey
+  createSurvey: async (surveyData) => {
+    const response = await api.post('/surveys', surveyData);
+    return response.data;
+  },
+
+  // Update survey
+  updateSurvey: async (id, surveyData) => {
+    const response = await api.put(`/surveys/${id}`, surveyData);
+    return response.data;
+  },
+
+  // Delete survey
+  deleteSurvey: async (id) => {
+    const response = await api.delete(`/surveys/${id}`);
+    return response.data;
+  },
+
+  // Duplicate survey
+  duplicateSurvey: async (id) => {
+    const response = await api.post(`/surveys/${id}/duplicate`);
+    return response.data;
+  },
+
+  // Publish survey
+  publishSurvey: async (id) => {
+    const response = await api.post(`/surveys/${id}/publish`);
+    return response.data;
+  },
+
+  // Unpublish survey
+  unpublishSurvey: async (id) => {
+    const response = await api.post(`/surveys/${id}/unpublish`);
+    return response.data;
+  }
+};
+```
+
+### Data Transformation Utilities (`src/utils/dataTransformers.js`)
+The application includes comprehensive data transformation utilities:
+
+```javascript
+// Transform frontend survey data to backend API format
+export const transformToBackendFormat = (frontendData) => {
+  // Ensure all questions have unique orderIndex values
+  const normalizedData = { ...frontendData };
+  if (normalizedData.pages && Array.isArray(normalizedData.pages)) {
+    normalizedData.pages = normalizedData.pages.map((page, pageIndex) => {
+      const normalizedPage = { ...page, orderIndex: pageIndex };
+      
+      if (page.questions && Array.isArray(page.questions)) {
+        normalizedPage.questions = page.questions.map((question, questionIndex) => ({
+          ...question,
+          orderIndex: questionIndex
+        }));
+      }
+      
+      return normalizedPage;
+    });
+  }
+  
+  const transformed = {
+    title: String(normalizedData.title || ''),
+    description: String(normalizedData.description || ''),
+    settings: parseJsonField(normalizedData.settings) || {},
+    theme: parseJsonField(normalizedData.theme) || {},
+    isPublic: ensureBoolean(normalizedData.isPublic, false),
+    allowAnonymous: ensureBoolean(normalizedData.allowAnonymous, true),
+    expiresAt: ensureDate(normalizedData.expiresAt),
+    pages: normalizedData.pages?.map(page => ({
+      name: String(page.name || ''),
+      orderIndex: ensureNumber(page.orderIndex, 0),
+      questions: page.questions?.map(question => ({
+        name: String(question.name || ''),
+        type: String(mapQuestionType(question.type) || 'text'),
+        title: String(question.title || ''),
+        description: String(question.description || ''),
+        placeholder: String(question.placeholder || ''),
+        required: ensureBoolean(question.required, false),
+        orderIndex: ensureNumber(question.orderIndex, 0),
+        validation: parseJsonField(question.validation) || {},
+        conditionalLogic: parseJsonField(question.conditionalLogic) || {},
+        styling: parseJsonField(question.styling) || {},
+        options: ensureArray(question.options)
+      })) || []
+    })) || []
+  };
+  
+  return transformed;
+};
+
+// Transform backend API response to frontend format
+export const transformToFrontendFormat = (backendData) => {
+  const transformed = {
+    id: backendData.id,
+    title: backendData.title || '',
+    description: backendData.description || '',
+    currentPageId: backendData.pages?.[0]?.id || 'page_1',
+    pages: backendData.pages?.map(page => ({
+      id: page.id,
+      name: page.name || '',
+      orderIndex: page.orderIndex || 0,
+      questionCount: page.questions?.length || 0,
+      questions: page.questions?.map(question => ({
+        id: question.id,
+        name: question.name || '',
+        type: mapBackendQuestionType(question.type),
+        icon: getQuestionIcon(question.type),
+        title: question.title || '',
+        description: question.description || '',
+        placeholder: question.placeholder || '',
+        required: question.required || false,
+        orderIndex: question.orderIndex || 0,
+        validation: parseJsonField(question.validation) || {},
+        conditionalLogic: parseJsonField(question.conditionalLogic) || {},
+        styling: parseJsonField(question.styling) || {},
+        options: parseJsonField(question.options) || []
+      })) || []
+    })) || []
+  };
+  
+  return transformed;
+};
+```
+
+### Authentication & Security
+The frontend implements secure authentication with the backend:
+
+```javascript
+// Request interceptor for authentication
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+### Error Handling & Validation
+Comprehensive error handling ensures robust frontend-backend communication:
+
+```javascript
+// Validate backend data before processing
+export const validateBackendData = (data) => {
+  if (!data) {
+    throw new Error('No data provided');
+  }
+  
+  if (!data.title) {
+    throw new Error('Survey title is required');
+  }
+  
+  if (!data.pages || !Array.isArray(data.pages)) {
+    throw new Error('Survey must have at least one page');
+  }
+  
+  // Validate each page and question
+  data.pages.forEach((page, pageIndex) => {
+    if (!page.name) {
+      throw new Error(`Page ${pageIndex + 1} must have a name`);
+    }
+    
+    if (page.questions && Array.isArray(page.questions)) {
+      page.questions.forEach((question, questionIndex) => {
+        if (!question.title) {
+          throw new Error(`Question ${questionIndex + 1} in page "${page.name}" must have a title`);
+        }
+      });
+    }
+  });
+  
+  return data;
+};
+```
 
 ## Getting Started
 
