@@ -348,7 +348,6 @@ const VisualSurveyBuilder = () => {
       setSurveyData(newSurveyData);
       addToHistory(newSurveyData);
       setSelectedQuestionId(newQuestion.id);
-      // setLastAddedQuestionId(newQuestion.id); // This is handled by SurveyCanvas now
       markAsUnsaved();
       return newQuestion.id; // Return the new question ID for SurveyCanvas to handle auto-scroll
     }

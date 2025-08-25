@@ -25,18 +25,16 @@ const SurveyViewerPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load survey data from API
     const loadSurvey = async () => {
       setLoading(true);
       try {
-        // Try to load from API first
         const data = await publicSurveyAPI.getPublicSurvey(surveyId);
         const transformedData = transformToFrontendFormat(data);
         setSurveyData(transformedData);
       } catch (error) {
         console.error("Error loading survey from API:", error);
         // Fallback to mock data for development
-        setSurveyData(mockJSONData);
+        // setSurveyData(mockJSONData); // Removed mock data fallback
       } finally {
         setLoading(false);
       }
@@ -47,13 +45,11 @@ const SurveyViewerPage = () => {
     }
   }, [surveyId]);
 
-  // Handle form submission
   const handleSubmit = async (submissionData) => {
     setFormData(submissionData);
     setIsSubmitted(true);
     
     try {
-      // Send response to backend API
       const responseData = {
         sessionId: `session_${Date.now()}`,
         timeSpent: submissionData.timeSpent || 0,
@@ -68,12 +64,10 @@ const SurveyViewerPage = () => {
       };
 
       await publicSurveyAPI.submitResponse(surveyId, responseData);
-      console.log("Response submitted successfully");
     } catch (error) {
       console.error("Error submitting response:", error);
     }
     
-    // Example: Send to parent application if embedded
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({
         type: "SURVEY_SUBMITTED",
@@ -83,12 +77,7 @@ const SurveyViewerPage = () => {
     }
   };
 
-  // Handle question changes
   const handleQuestionChange = (questionId, value, allData) => {
-    // In real app, you might want to save partial responses
-    console.log("Question changed:", questionId, value, allData);
-    
-    // Example: Send to parent application if embedded
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({
         type: "SURVEY_QUESTION_CHANGED",

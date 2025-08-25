@@ -445,64 +445,14 @@ const SurveyCanvas = ({
         e?.dataTransfer?.getData("application/json")
       );
 
-      console.log("Component data received in SurveyCanvas:", componentData); // Debug log
-
-      // Pass the component data directly to the parent component
       const newQuestionId = onDrop(componentData, dragOverIndex);
 
-      // Set the newly added question ID for auto-scrolling
       if (newQuestionId) {
         setLastAddedQuestionId(newQuestionId);
       }
     } catch (error) {
       console.error("Error handling drop:", error);
     }
-  };
-
-  // Generate unique question name based on type and existing questions
-  const generateUniqueQuestionName = (questionType, currentSurveyData) => {
-    const typeMap = {
-      text: "text_input",
-      "text-input": "text_input",
-      textarea: "textarea",
-      email: "email",
-      number: "number",
-      phone: "phone",
-      radio: "radio_selection",
-      checkbox: "checkbox_selection",
-      dropdown: "dropdown_selection",
-      "multi-select": "multi_select",
-      "star-rating": "star_rating",
-      likert: "likert_scale",
-      nps: "nps_score",
-      slider: "slider",
-      "matrix-single": "matrix_single",
-      "matrix-multiple": "matrix_multiple",
-      ranking: "ranking",
-      "date-picker": "date_picker",
-      "time-picker": "time_picker",
-      "file-upload": "file_upload",
-      signature: "signature",
-      location: "location",
-    };
-
-    const baseName = typeMap[questionType] || "question";
-    let counter = 1;
-    let questionName = `${baseName}_${counter}`;
-
-    // Get all existing question names from the survey
-    const existingNames =
-      currentSurveyData?.pages?.flatMap(
-        (page) => page?.questions?.map((q) => q.name) || []
-      ) || [];
-
-    // Find a unique name
-    while (existingNames.includes(questionName)) {
-      counter++;
-      questionName = `${baseName}_${counter}`;
-    }
-
-    return questionName;
   };
 
   const handleDragLeave = (e) => {
