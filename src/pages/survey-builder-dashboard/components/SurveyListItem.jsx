@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const SurveyListItem = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSelect }) => {
+const SurveyListItem = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSelect, hasDuplicatedSurvey = false }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'published':
@@ -70,20 +70,29 @@ const SurveyListItem = ({ survey, onDuplicate, onArchive, onExport, isSelected, 
 
         {/* Actions */}
         <div className="flex items-center space-x-2">
-          <Link to="/visual-survey-builder">
+          <Link 
+            to={survey?.isDuplicated 
+              ? `/visual-survey-builder?copiedSurveyId=${survey?.originalId}`
+              : `/visual-survey-builder?surveyId=${survey?.id}`
+            }
+          >
             <Button variant="default" size="sm">
               <Icon name="Edit" size={14} className="mr-2" />
               Edit
             </Button>
           </Link>
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDuplicate(survey?.id)}
-          >
-            <Icon name="Copy" size={14} />
-          </Button>
+          {/* Only show duplicate button if this survey is not duplicated and no other duplicate exists */}
+          {!survey?.isDuplicated && !hasDuplicatedSurvey && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDuplicate(survey?.id)}
+              title="Duplicate survey"
+            >
+              <Icon name="Copy" size={14} />
+            </Button>
+          )}
           
           <Button
             variant="ghost"

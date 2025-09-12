@@ -4,7 +4,7 @@ import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
 
-const SurveyCard = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSelect }) => {
+const SurveyCard = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSelect, hasDuplicatedSurvey = false }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const getStatusColor = (status) => {
@@ -92,7 +92,13 @@ const SurveyCard = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSe
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between">
-          <Link to={`/visual-survey-builder/${survey?.id}`} className="flex-1 mr-2">
+          <Link 
+            to={survey?.isDuplicated 
+              ? `/visual-survey-builder?copiedSurveyId=${survey?.originalId}`
+              : `/visual-survey-builder?surveyId=${survey?.id}`
+            } 
+            className="flex-1 mr-2"
+          >
             <Button variant="default" size="sm" className="w-full">
               <Icon name="Edit" size={14} className="mr-2" />
               Edit
@@ -109,14 +115,18 @@ const SurveyCard = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSe
       {/* Hover Actions */}
       {isHovered && (
         <div className="absolute top-3 right-3 flex items-center space-x-1 bg-background border border-border rounded-md survey-shadow p-1">
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={() => onDuplicate(survey?.id)}
-            className="h-8 w-8 p-0"
-          >
-            <Icon name="Copy" size={14} />
-          </Button>
+          {/* Only show duplicate button if this survey is not duplicated and no other duplicate exists */}
+          {!survey?.isDuplicated && !hasDuplicatedSurvey && (
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => onDuplicate(survey?.id)}
+              className="h-8 w-8 p-0"
+              title="Duplicate survey"
+            >
+              <Icon name="Copy" size={14} />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="xs"
