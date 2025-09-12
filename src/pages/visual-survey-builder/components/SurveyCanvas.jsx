@@ -1298,26 +1298,39 @@ const SurveyCanvas = ({
 
       case "signature":
         return (
-          <div
-            className={clsx(
-              "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
-              previewMode === "form"
-                ? "border-gray-300 hover:border-gray-400 cursor-pointer hover:bg-gray-50"
-                : "border-gray-200"
-            )}
-          >
-            <Icon
-              name="PenTool"
-              size={20}
-              className="mx-auto mb-2 text-gray-400"
-            />
-            <p className="text-sm text-gray-600 mb-1">
-              {previewMode === "form" ? "Click to sign" : "Signature area"}
-            </p>
-            <p className="text-xs text-gray-500">Draw your signature here</p>
-            {previewMode === "form" && (
-              <div className="mt-3 text-xs text-gray-400">
-                Use mouse or touch to draw signature
+          <div className="space-y-2">
+            {previewMode === "form" ? (
+              <div className="border border-gray-300 rounded-lg p-4 bg-white">
+                <div className="text-center text-gray-500 italic text-sm mb-2">
+                  Interactive Signature Pad
+                </div>
+                <div className="border-2 border-dashed border-gray-200 rounded-lg h-32 flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <Icon
+                      name="PenTool"
+                      size={24}
+                      className="mx-auto mb-2 text-gray-400"
+                    />
+                    <p className="text-sm text-gray-600">
+                      Signature pad will be interactive in preview
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className={clsx(
+                  "border-2 border-dashed rounded-lg p-4 text-center transition-colors",
+                  "border-gray-200"
+                )}
+              >
+                <Icon
+                  name="PenTool"
+                  size={20}
+                  className="mx-auto mb-2 text-gray-400"
+                />
+                <p className="text-sm text-gray-600 mb-1">Signature area</p>
+                <p className="text-xs text-gray-500">Draw your signature here</p>
               </div>
             )}
           </div>
@@ -1481,7 +1494,7 @@ const SurveyCanvas = ({
       className="flex-1 bg-surface flex flex-col survey-canvas-container"
     >
       {/* Canvas Header */}
-      <div className="bg-card border-b border-border p-4">
+      <div className="bg-card border-b border-border p-4 pt-0">
         <div className="flex items-center justify-between">
           <div>
             <input
@@ -1493,7 +1506,7 @@ const SurveyCanvas = ({
                   title: e.target.value,
                 })
               }
-              className="text-xl font-semibold text-foreground bg-transparent border-none outline-none focus:bg-background focus:px-2 focus:py-1 focus:rounded survey-transition"
+              className="text-xl w-[350px] font-semibold text-foreground bg-transparent border-none outline-none focus:bg-background focus:px-2 focus:py-1 focus:rounded survey-transition"
               placeholder="Enter survey title..."
             />
             <input
@@ -1654,45 +1667,67 @@ const SurveyCanvas = ({
             {/* Preview Modal */}
             <div id="survey-canvas-preview-container" className="preview-modal">
               {/* Preview Header */}
-              <div className="preview-modal-header">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">
-                    {surveyData?.title || "Survey Preview"}
-                  </h2>
-                  <p className="text-sm text-text-secondary mt-1">
-                    {surveyData?.description ||
-                      "Preview your survey in different modes"}
-                  </p>
+              <div className="preview-modal-header bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200 shadow-sm">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Icon name="Eye" size={20} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {surveyData?.title || "Survey Preview"}
+                      </h2>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {surveyData?.description ||
+                          "Preview your survey in different modes"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={previewMode === "default" ? "default" : "outline"}
-                    size="sm"
-                    id="survey-canvas-preview-mode-default-button"
-                    onClick={() => setPreviewMode("default")}
-                    className="survey-canvas-preview-mode-default-button"
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+                    <Button
+                      variant={previewMode === "default" ? "default" : "ghost"}
+                      size="sm"
+                      id="survey-canvas-preview-mode-default-button"
+                      onClick={() => setPreviewMode("default")}
+                      className={`survey-canvas-preview-mode-default-button transition-all duration-200 ${
+                        previewMode === "default" 
+                          ? "bg-blue-600 text-white shadow-md" 
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      }`}
+                    >
+                      <Icon name="Layout" size={16} className="mr-2" />
+                      Default
+                    </Button>
+                    <Button
+                      variant={previewMode === "form" ? "default" : "ghost"}
+                      size="sm"
+                      id="survey-canvas-preview-mode-form-button"
+                      onClick={() => setPreviewMode("form")}
+                      className={`survey-canvas-preview-mode-form-button transition-all duration-200 ${
+                        previewMode === "form" 
+                          ? "bg-blue-600 text-white shadow-md" 
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      }`}
+                    >
+                      <Icon name="FileText" size={16} className="mr-2" />
+                      Form
+                    </Button>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={onTogglePreview}
+                    className="hover:bg-red-100 hover:text-red-600 transition-colors duration-200"
                   >
-                    <Icon name="Layout" size={16} className="mr-1" />
-                    Default
-                  </Button>
-                  <Button
-                    variant={previewMode === "form" ? "default" : "outline"}
-                    size="sm"
-                    id="survey-canvas-preview-mode-form-button"
-                    onClick={() => setPreviewMode("form")}
-                    className="survey-canvas-preview-mode-form-button"
-                  >
-                    <Icon name="FileText" size={16} className="mr-1" />
-                    Form
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={onTogglePreview}>
                     <Icon name="X" size={20} />
                   </Button>
                 </div>
               </div>
 
               {/* Preview Content - Full Screen */}
-              <div className="preview-modal-content">
+              <div className="preview-modal-content bg-gray-50">
                 {(() => {
                   // Get all questions from all pages for comprehensive preview
                   const allQuestions =
@@ -1704,88 +1739,105 @@ const SurveyCanvas = ({
                     return (
                       <div
                         id="survey-canvas-preview-no-questions-content"
-                        className="flex flex-col items-center justify-center h-full text-center p-6"
+                        className="flex flex-col items-center justify-center h-full text-center p-12"
                       >
-                        <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4">
+                        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6 shadow-lg">
                           <Icon
                             name="FileQuestion"
-                            size={24}
-                            className="text-text-secondary"
+                            size={32}
+                            className="text-blue-600"
                           />
                         </div>
-                        <h3 className="text-lg font-medium text-foreground mb-2">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">
                           No Questions Yet
                         </h3>
-                        <p className="text-text-secondary max-w-md">
+                        <p className="text-gray-600 max-w-md text-lg">
                           Add some questions to your survey to preview how it
-                          will look.
+                          will look to your users.
                         </p>
+                        <div className="mt-6 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-sm text-blue-700">
+                            💡 Drag components from the left panel to get started
+                          </p>
+                        </div>
                       </div>
                     );
                   }
 
                   return (
-                    <div className="p-6 overflow-y-auto max-h-screen">
-                      {(() => {
-                        const transformedData = transformDataForSurveyViewer({
-                          ...surveyData,
-                          questions: allQuestions,
-                        });
+                    <div className="h-full overflow-y-auto">
+                      <div className="max-w-4xl mx-auto p-8">
+                        {(() => {
+                          const transformedData = transformDataForSurveyViewer({
+                            ...surveyData,
+                            questions: allQuestions,
+                          });
 
-                        if (
-                          !transformedData ||
-                          !transformedData.pages ||
-                          transformedData.pages.length === 0
-                        ) {
+                          if (
+                            !transformedData ||
+                            !transformedData.pages ||
+                            transformedData.pages.length === 0
+                          ) {
+                            return (
+                              <div className="text-center py-12">
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <Icon name="AlertCircle" size={24} className="text-red-600" />
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                  Unable to Preview
+                                </h3>
+                                <p className="text-gray-600">
+                                  There was an issue loading the survey data
+                                </p>
+                              </div>
+                            );
+                          }
+
                           return (
-                            <div className="text-center py-8 text-text-secondary">
-                              Unable to preview survey data
+                            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                              <SurveyViewer
+                                key={`preview-${previewMode}`} // Force re-render when mode changes
+                                surveyData={transformedData}
+                                mode={previewMode === "form" ? "form" : "survey"}
+                                submitButton={{
+                                  label: "Complete Survey",
+                                  variant: "primary",
+                                  className:
+                                    "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-12 py-4 rounded-xl font-bold text-xl transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105",
+                                }}
+                                customStyles={{
+                                  container: "max-w-none shadow-none",
+                                  input:
+                                    "border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500",
+                                  label: "text-gray-900 font-semibold",
+                                  error: "text-red-600",
+                                }}
+                                onSubmit={(submissionData) => {
+                                  console.log(
+                                    "Preview form submitted:",
+                                    submissionData
+                                  );
+                                  // In preview mode, we just log the data with enhanced information
+                                  alert(
+                                    `🎉 Preview: Survey completed!\n\n📊 Total Questions: ${submissionData.totalQuestions}\n✅ Answered Questions: ${submissionData.answeredQuestions}\n\n📝 Check console for full submission data.`
+                                  );
+                                }}
+                                onQuestionChange={(questionId, value, allData) => {
+                                  console.log(
+                                    "Question changed:",
+                                    questionId,
+                                    value,
+                                    allData
+                                  );
+                                  // In preview mode, we just log the changes
+                                }}
+                                initialValues={{}}
+                                className="survey-viewer-preview"
+                              />
                             </div>
                           );
-                        }
-
-                        return (
-                          <SurveyViewer
-                            key={`preview-${previewMode}`} // Force re-render when mode changes
-                            surveyData={transformedData}
-                            mode={previewMode === "form" ? "form" : "survey"}
-                            submitButton={{
-                              label: "Complete Survey",
-                              variant: "primary",
-                              className:
-                                "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl",
-                            }}
-                            customStyles={{
-                              container: "max-w-none",
-                              input:
-                                "border-border bg-background text-foreground",
-                              label: "text-foreground",
-                              error: "text-error",
-                            }}
-                            onSubmit={(submissionData) => {
-                              console.log(
-                                "Preview form submitted:",
-                                submissionData
-                              );
-                              // In preview mode, we just log the data with enhanced information
-                              alert(
-                                `Preview: Survey completed!\n\nTotal Questions: ${submissionData.totalQuestions}\nAnswered Questions: ${submissionData.answeredQuestions}\n\nCheck console for full data.`
-                              );
-                            }}
-                            onQuestionChange={(questionId, value, allData) => {
-                              console.log(
-                                "Question changed:",
-                                questionId,
-                                value,
-                                allData
-                              );
-                              // In preview mode, we just log the changes
-                            }}
-                            initialValues={{}}
-                            className="survey-viewer-preview"
-                          />
-                        );
-                      })()}
+                        })()}
+                      </div>
                     </div>
                   );
                 })()}

@@ -24,5 +24,13 @@ export default defineConfig(({ mode }) => {
     define: {
       __APP_ENV__: JSON.stringify(env.APP_ENV || mode),
     },
+    optimizeDeps: {
+      include: ['prop-types', 'react-signature-canvas']
+    },
+    build: {
+      commonjsOptions: {
+        include: [/prop-types/, /react-signature-canvas/]
+      }
+    }
   };
 });

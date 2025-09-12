@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "../utils/cn";
+import SignaturePad from "./ui/SignaturePad";
 
 const SurveyViewer = ({
   surveyData,
@@ -733,9 +734,14 @@ const SurveyViewer = ({
             {mode === "survey" && question?.description && (
               <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
             )}
-            <div className="border border-gray-300 rounded-md h-32 flex items-center justify-center text-gray-500 italic">
-              Signature Pad (Preview Only)
-            </div>
+            <SignaturePad
+              value={value || ""}
+              onChange={(signatureData) => handleInputChange(questionId, signatureData)}
+              disabled={false}
+              width={400}
+              height={200}
+              className="w-full"
+            />
             {error && <p className={baseErrorClasses}>{error}</p>}
           </div>
         );
@@ -922,20 +928,48 @@ const SurveyViewer = ({
 
       {/* Standalone Submit Button for Single Page Surveys */}
       {totalPages <= 1 && currentPage?.questions && currentPage.questions.length > 0 && (
-        <div className="flex justify-center mt-8 p-4 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting || submitButton.disabled}
-            className={cn(
-              getSubmitButtonStyles(submitButton.variant),
-              "survey-viewer-submit-button px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200",
-              (isSubmitting || submitButton.disabled) ? "opacity-50 cursor-not-allowed" : ""
-            )}
-            id="survey-viewer-submit-button"
-          >
-            {isSubmitting ? submitButton.loadingLabel : submitButton.label}
-          </button>
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 shadow-lg mt-8">
+          <div className="max-w-2xl mx-auto p-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Ready to Submit?
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Review your answers and click submit when ready
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting || submitButton.disabled}
+                className={cn(
+                  "survey-viewer-submit-button px-12 py-4 text-xl font-bold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 active:scale-95",
+                  "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700",
+                  "text-white border-0 focus:outline-none focus:ring-4 focus:ring-green-300",
+                  "min-w-[200px] flex items-center justify-center space-x-2",
+                  (isSubmitting || submitButton.disabled) 
+                    ? "opacity-50 cursor-not-allowed transform-none hover:scale-100" 
+                    : "hover:from-green-700 hover:to-emerald-700"
+                )}
+                id="survey-viewer-submit-button"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>{submitButton.loadingLabel}</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{submitButton.label}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
