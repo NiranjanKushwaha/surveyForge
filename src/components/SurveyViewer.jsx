@@ -763,6 +763,131 @@ const SurveyViewer = ({
           </div>
         );
 
+      case "star-rating":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <div className="flex items-center space-x-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => handleInputChange(questionId, star)}
+                  className={`text-3xl transition-colors ${
+                    star <= (value || 0)
+                      ? "text-yellow-400 hover:text-yellow-500"
+                      : "text-gray-300 hover:text-yellow-400"
+                  }`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            {value && (
+              <p className="text-sm text-gray-600 mt-1">
+                You rated: {value} out of 5 stars
+              </p>
+            )}
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "file-upload":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label htmlFor={questionId} className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+              <input
+                type="file"
+                id={questionId}
+                name={questionId}
+                onChange={(e) => handleInputChange(questionId, e?.target?.files?.[0])}
+                className="hidden"
+                required={question?.required}
+                accept="*/*"
+              />
+              <label
+                htmlFor={questionId}
+                className="cursor-pointer flex flex-col items-center space-y-2"
+              >
+                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <span className="text-sm text-gray-600">
+                  {value ? value.name : "Click to upload or drag and drop"}
+                </span>
+                <span className="text-xs text-gray-500">Any file type</span>
+              </label>
+            </div>
+            {value && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-800">
+                  ✓ File selected: {value.name}
+                </p>
+              </div>
+            )}
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "date-picker":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label htmlFor={questionId} className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <input
+              type="date"
+              id={questionId}
+              name={questionId}
+              value={value || ""}
+              onChange={(e) => handleInputChange(questionId, e?.target?.value)}
+              className={baseInputClasses}
+              required={question?.required}
+            />
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
+      case "time-picker":
+        return (
+          <div key={questionId} className={`mb-6 ${questionWidth}`}>
+            <label htmlFor={questionId} className={baseLabelClasses}>
+              {question?.title}
+              {question?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {mode === "survey" && question?.description && (
+              <p className="text-gray-600 text-sm mb-2">{question?.description}</p>
+            )}
+            <input
+              type="time"
+              id={questionId}
+              name={questionId}
+              value={value || ""}
+              onChange={(e) => handleInputChange(questionId, e?.target?.value)}
+              className={baseInputClasses}
+              required={question?.required}
+            />
+            {error && <p className={baseErrorClasses}>{error}</p>}
+          </div>
+        );
+
       default:
         return (
           <div key={questionId} className={`mb-6 ${questionWidth}`}>
@@ -898,15 +1023,17 @@ const SurveyViewer = ({
 
   return (
     <div id="survey-viewer-container" className={cn("max-w-2xl mx-auto p-6 survey-viewer-container", className)} {...props}>
-      {/* Survey Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {surveyData?.title}
-        </h1>
-        {mode === "survey" && surveyData?.description && (
-          <p className="text-gray-600">{surveyData?.description}</p>
-        )}
-      </div>
+      {/* Survey Header - Only show if not in page mode */}
+      {mode === "survey" && (
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {surveyData?.title}
+          </h1>
+          {surveyData?.description && (
+            <p className="text-gray-600">{surveyData?.description}</p>
+          )}
+        </div>
+      )}
 
       {/* Progress Indicator */}
       {renderProgress()}

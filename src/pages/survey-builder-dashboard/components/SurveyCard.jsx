@@ -4,7 +4,7 @@ import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
 
-const SurveyCard = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSelect }) => {
+const SurveyCard = ({ survey, onDuplicate, onArchive, onExport, onGetPublicLink, isSelected, onSelect }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const getStatusColor = (status) => {
@@ -100,7 +100,12 @@ const SurveyCard = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSe
           </Link>
           
           {survey?.status === 'published' && (
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onGetPublicLink?.(survey?.id)}
+              title="Get public link"
+            >
               <Icon name="ExternalLink" size={14} />
             </Button>
           )}

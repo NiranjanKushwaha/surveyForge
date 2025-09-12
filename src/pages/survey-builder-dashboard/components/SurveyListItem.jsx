@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const SurveyListItem = ({ survey, onDuplicate, onArchive, onExport, isSelected, onSelect }) => {
+const SurveyListItem = ({ survey, onDuplicate, onArchive, onExport, onGetPublicLink, isSelected, onSelect }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'published':
@@ -103,7 +103,12 @@ const SurveyListItem = ({ survey, onDuplicate, onArchive, onExport, isSelected, 
           </Button>
 
           {survey?.status === 'published' && (
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onGetPublicLink?.(survey?.id)}
+              title="Get public link"
+            >
               <Icon name="ExternalLink" size={14} />
             </Button>
           )}

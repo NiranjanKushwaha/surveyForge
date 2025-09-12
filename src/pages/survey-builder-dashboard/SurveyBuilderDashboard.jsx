@@ -26,23 +26,29 @@ const SurveyBuilderDashboard = () => {
     dateRange: [],
   });
 
-  // Load surveys from API
+  // Load surveys and stats from API
   useEffect(() => {
-    const loadSurveys = async () => {
+    const loadData = async () => {
       try {
-        const data = await surveyAPI.getSurveys();
-        const transformedData = transformSurveyListData(data);
+        // Load surveys
+        const surveyData = await surveyAPI.getSurveys();
+        const transformedData = transformSurveyListData(surveyData);
         setSurveys(transformedData);
         setFilteredSurveys(transformedData);
+
+        // Load stats from API
+        const statsData = await surveyAPI.getSurveyStats();
+        setStats(statsData);
       } catch (error) {
-        console.error('Error loading surveys:', error);
+        console.error('Error loading data:', error);
         // Fallback to mock data for development
         setSurveys(mockSurveys);
         setFilteredSurveys(mockSurveys);
+        setStats(calculateStats(mockSurveys));
       }
     };
 
-    loadSurveys();
+    loadData();
   }, []);
 
   // Mock survey data (fallback)
@@ -147,18 +153,29 @@ const SurveyBuilderDashboard = () => {
     },
   ];
 
-  // Mock stats data
-  const mockStats = {
-    totalSurveys: 43,
-    activeSurveys: 22,
-    totalResponses: 8945,
-    avgCompletionRate: 86,
+  // Calculate real stats from survey data
+  const calculateStats = (surveyData) => {
+    const totalSurveys = surveyData?.length || 0;
+    const activeSurveys = surveyData?.filter(survey => survey?.status === 'published')?.length || 0;
+    const totalResponses = surveyData?.reduce((sum, survey) => sum + (survey?.responses || 0), 0) || 0;
+    const avgCompletionRate = totalSurveys > 0 
+      ? Math.round(surveyData?.reduce((sum, survey) => sum + (survey?.completionRate || 0), 0) / totalSurveys)
+      : 0;
+
+    return {
+      totalSurveys,
+      activeSurveys,
+      totalResponses,
+      avgCompletionRate,
+    };
   };
 
-  useEffect(() => {
-    setSurveys(mockSurveys);
-    setFilteredSurveys(mockSurveys);
-  }, []);
+  const [stats, setStats] = useState({
+    totalSurveys: 0,
+    activeSurveys: 0,
+    totalResponses: 0,
+    avgCompletionRate: 0,
+  });
 
   // Filter and search logic
   useEffect(() => {
@@ -264,6 +281,20 @@ const SurveyBuilderDashboard = () => {
     }
   };
 
+  const handleGetPublicLink = async (surveyId) => {
+    try {
+      const response = await surveyAPI.getSurveyPublicLink(surveyId);
+      if (response?.publicLink) {
+        // Copy to clipboard
+        await navigator.clipboard.writeText(response.publicLink);
+        alert('✅ Public link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error getting public link:', error);
+      alert('❌ Failed to get public link. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -319,7 +350,7 @@ const SurveyBuilderDashboard = () => {
             </div>
 
             {/* Stats Overview */}
-            <StatsOverview stats={mockStats} />
+            <StatsOverview stats={stats} />
 
             {/* Search and Sort Controls */}
             <SearchAndSort
@@ -386,6 +417,7 @@ const SurveyBuilderDashboard = () => {
                       onDuplicate={handleDuplicate}
                       onArchive={handleArchive}
                       onExport={handleExport}
+                      onGetPublicLink={handleGetPublicLink}
                       isSelected={selectedSurveys?.includes(survey?.id)}
                       onSelect={handleSelectSurvey}
                     />
@@ -396,6 +428,7 @@ const SurveyBuilderDashboard = () => {
                       onDuplicate={handleDuplicate}
                       onArchive={handleArchive}
                       onExport={handleExport}
+                      onGetPublicLink={handleGetPublicLink}
                       isSelected={selectedSurveys?.includes(survey?.id)}
                       onSelect={handleSelectSurvey}
                     />

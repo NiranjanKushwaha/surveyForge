@@ -517,6 +517,54 @@ const VisualSurveyBuilder = () => {
     }
   };
 
+  // Publish survey to make it publicly accessible
+  const handlePublishSurvey = async () => {
+    if (!surveyData?.id) {
+      throw new Error("Survey must be saved before publishing");
+    }
+    
+    try {
+      await surveyAPI.publishSurvey(surveyData.id);
+      // Update survey status in local state
+      setSurveyData(prev => ({ ...prev, status: 'published' }));
+    } catch (error) {
+      console.error("Error publishing survey:", error);
+      throw error;
+    }
+  };
+
+  // Unpublish survey
+  const handleUnpublishSurvey = async () => {
+    if (!surveyData?.id) {
+      throw new Error("Survey must be saved before unpublishing");
+    }
+    
+    try {
+      await surveyAPI.unpublishSurvey(surveyData.id);
+      // Update survey status in local state
+      setSurveyData(prev => ({ ...prev, status: 'draft' }));
+    } catch (error) {
+      console.error("Error unpublishing survey:", error);
+      throw error;
+    }
+  };
+
+  // Get public survey link
+  const handleGetPublicLink = async () => {
+    if (!surveyData?.id) {
+      throw new Error("Survey must be saved before getting public link");
+    }
+    
+    try {
+      const response = await surveyAPI.getSurveyPublicLink(surveyData.id);
+      return response.publicLink || `${window.location.origin}/survey-viewer/${surveyData.id}`;
+    } catch (error) {
+      console.error("Error getting public link:", error);
+      // Fallback to constructing the link manually
+      return `${window.location.origin}/survey-viewer/${surveyData.id}`;
+    }
+  };
+
   const handleUndo = () => {
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
@@ -675,6 +723,9 @@ const VisualSurveyBuilder = () => {
           onSave={handleSave}
           onPreview={handlePreview}
           onPublishUpdate={handlePublishUpdate}
+          onPublishSurvey={handlePublishSurvey}
+          onUnpublishSurvey={handleUnpublishSurvey}
+          onGetPublicLink={handleGetPublicLink}
           canUndo={historyIndex > 0}
           canRedo={historyIndex < history?.length - 1}
           saveStatus={saveStatus}

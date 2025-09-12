@@ -94,6 +94,18 @@ export const surveyAPI = {
     return response.data;
   },
 
+  // Get survey public link
+  getSurveyPublicLink: async (id) => {
+    const response = await api.get(`/surveys/${id}/public-link`);
+    return response.data;
+  },
+
+  // Get survey statistics
+  getSurveyStats: async () => {
+    const response = await api.get('/surveys/stats');
+    return response.data;
+  },
+
   // Get survey responses
   getSurveyResponses: async (surveyId) => {
     const response = await api.get(`/surveys/${surveyId}/responses`);
