@@ -445,23 +445,31 @@
     z-index: 9999 !important;
     background-color: white !important;
     overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
   
   .preview-modal-header {
-    background-color: #f8fafc;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border-bottom: 1px solid #e2e8f0;
-    padding: 1rem;
+    padding: 1.5rem 2rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
   
   .preview-modal-content {
     flex: 1;
     overflow-y: auto;
-    padding: 1.5rem;
-    background-color: white;
+    background-color: #f9fafb;
+    position: relative;
+  }
+  
+  /* Enhanced shadow for better depth */
+  .shadow-3xl {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
   }
   
   /* Ensure modals are above everything */
