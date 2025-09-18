@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Header from "../../components/ui/Header";
 import Breadcrumb from "../../components/ui/Breadcrumb";
 import Button from "../../components/ui/Button";
+import Icon from "../../components/AppIcon";
 import ComponentLibrary from "./components/ComponentLibrary";
 import SurveyCanvas from "./components/SurveyCanvas";
 import PropertiesPanel from "./components/PropertiesPanel";
@@ -39,7 +40,12 @@ const getQuestionIcon = (type) => {
 
 const VisualSurveyBuilder = () => {
   const navigate = useNavigate();
-  const { surveyId } = useParams();
+  const { surveyId: paramSurveyId } = useParams();
+  const location = useLocation();
+  
+  // Get surveyId from URL params or query string
+  const surveyId = paramSurveyId || new URLSearchParams(location.search).get('surveyId');
+  const copiedSurveyId = new URLSearchParams(location.search).get('copiedSurveyId');
   const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -73,7 +79,55 @@ const VisualSurveyBuilder = () => {
   // Effects: Load existing survey if editing
   useEffect(() => {
     const loadSurvey = async () => {
-      if (surveyId) {
+      // Handle copied survey data - fetch original survey
+      if (copiedSurveyId) {
+        try {
+          setIsLoading(true);
+          console.log("🔄 Loading original survey for copying:", copiedSurveyId);
+          
+          // Fetch the original survey data
+          const originalData = await surveyAPI.getSurvey(copiedSurveyId);
+          console.log("📋 Original survey data:", originalData);
+          
+          // Transform the original survey data to frontend format
+          const transformedData = transformToFrontendFormat(originalData);
+          console.log("🔄 Transformed data:", transformedData);
+          
+          // Clear the copied survey markers to treat it as a new survey
+          transformedData.id = null; // Clear ID so it's treated as new
+          transformedData.isDuplicated = false;
+          transformedData.originalId = null;
+          transformedData.title = transformedData.title?.replace(' (Copy)', '') || 'Untitled Survey'; // Remove (Copy) suffix
+          transformedData.status = 'draft'; // Ensure it's draft
+          transformedData.responses = 0; // Reset responses
+          transformedData.completionRate = 0; // Reset completion rate
+          transformedData.createdAt = new Date().toISOString(); // New creation date
+          
+          // Ensure we have the essential structure
+          if (!transformedData.pages || transformedData.pages.length === 0) {
+            console.warn("⚠️ No pages found in transformed data, creating default page");
+            transformedData.pages = [{
+              id: 'page1',
+              title: 'Page 1',
+              questions: [],
+              order: 1
+            }];
+            transformedData.currentPageId = 'page1';
+          }
+          
+          console.log("✅ Final survey data for copying:", transformedData);
+          
+          setSurveyData(transformedData);
+          setHistory([transformedData]);
+          setHistoryIndex(0);
+          setSaveStatus(SAVE_STATUS.UNSAVED); // Mark as unsaved since it's a new survey
+        } catch (error) {
+          console.error("❌ Error loading copied survey:", error);
+          alert(`Failed to load copied survey: ${error.message}`);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (surveyId) {
         try {
           setIsLoading(true);
           const data = await surveyAPI.getSurvey(surveyId);
@@ -117,7 +171,7 @@ const VisualSurveyBuilder = () => {
         localStorage.removeItem("surveyforge_autosave");
       }
     };
-  }, [surveyId]);
+  }, [surveyId, copiedSurveyId]);
 
   // Effects: Auto-save functionality (local only - no API calls)
   useEffect(() => {
@@ -619,7 +673,13 @@ const VisualSurveyBuilder = () => {
   const breadcrumbItems = [
     { label: "Dashboard", path: "/survey-builder-dashboard" },
     { label: "Visual Builder", path: "/visual-survey-builder" },
-    { label: surveyId ? surveyData?.title || "Loading..." : "New Survey" },
+    { 
+      label: copiedSurveyId 
+        ? `${surveyData?.title || "Loading..."} (Copied)` 
+        : surveyId 
+          ? surveyData?.title || "Loading..." 
+          : "New Survey" 
+    },
   ];
 
   return (
@@ -653,10 +713,24 @@ const VisualSurveyBuilder = () => {
         </div>
       </div>
 
+      {/* Copied Survey Notification */}
+      {copiedSurveyId && (
+        <div className="fixed top-[116px] w-full z-10 px-6 py-2 bg-blue-50 border-b border-blue-200">
+          <div className="flex items-center justify-center">
+            <div className="flex items-center space-x-2 text-blue-800">
+              <Icon name="Copy" size={16} />
+              <span className="text-sm font-medium">
+                You are editing a copied survey. When you publish the survey, it will create a new survey.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Builder Interface - This section will scroll vertically */}
       <div
         className="absolute inset-0 overflow-y-auto"
-        style={{ paddingTop: "116px", paddingBottom: "100px" }}
+        style={{ paddingTop: copiedSurveyId ? "148px" : "116px", paddingBottom: "100px" }}
       >
         <div className="flex h-full">
           {/* Component Library */}

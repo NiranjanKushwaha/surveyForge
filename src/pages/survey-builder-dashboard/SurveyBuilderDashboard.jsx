@@ -4,6 +4,7 @@ import Header from "../../components/ui/Header";
 import Breadcrumb from "../../components/ui/Breadcrumb";
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
+import ConfirmationDialog from "../../components/ui/ConfirmationDialog";
 import SurveyCard from "./components/SurveyCard";
 import SurveyListItem from "./components/SurveyListItem";
 import BulkActions from "./components/BulkActions";
@@ -24,6 +25,15 @@ const SurveyBuilderDashboard = () => {
     types: [],
     status: [],
     dateRange: [],
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [confirmationDialog, setConfirmationDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    type: "warning"
   });
 
   // Load surveys and stats from API
@@ -50,6 +60,9 @@ const SurveyBuilderDashboard = () => {
 
     loadData();
   }, []);
+  // Track if there's already a duplicated survey (only one allowed total)
+  const [hasDuplicatedSurvey, setHasDuplicatedSurvey] = useState(false);
+  const [duplicatedSurveyId, setDuplicatedSurveyId] = useState(null);
 
   // Mock survey data (fallback)
   const mockSurveys = [
@@ -176,6 +189,50 @@ const SurveyBuilderDashboard = () => {
     totalResponses: 0,
     avgCompletionRate: 0,
   });
+  // Get current stats from all surveys
+  const currentStats = calculateStats(surveys);
+  
+  // Get filtered stats (for when search/filters are applied)
+  const filteredStats = calculateStats(filteredSurveys);
+
+  // Load surveys from API
+  useEffect(() => {
+    const loadSurveys = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const data = await surveyAPI.getSurveys();
+        const transformedData = transformSurveyListData(data);
+        setSurveys(transformedData);
+        setFilteredSurveys(transformedData);
+        
+        // Check if there's already a duplicated survey
+        const duplicatedSurvey = transformedData.find(s => s.isDuplicated);
+        if (duplicatedSurvey) {
+          setHasDuplicatedSurvey(true);
+          setDuplicatedSurveyId(duplicatedSurvey.id);
+        }
+      } catch (error) {
+        console.error('Error loading surveys:', error);
+        setError('Failed to load surveys. Using demo data.');
+        // Fallback to mock data for development
+        setSurveys(mockSurveys);
+        setFilteredSurveys(mockSurveys);
+        
+        // Check mock data for duplicated surveys
+        const duplicatedSurvey = mockSurveys.find(s => s.isDuplicated);
+        if (duplicatedSurvey) {
+          setHasDuplicatedSurvey(true);
+          setDuplicatedSurveyId(duplicatedSurvey.id);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSurveys();
+  }, []);
 
   // Filter and search logic
   useEffect(() => {
@@ -247,28 +304,219 @@ const SurveyBuilderDashboard = () => {
   };
 
   // Action handlers
-  const handleDuplicate = (surveyId) => {
-    console.log("Duplicating survey:", surveyId);
+  const handleDuplicate = async (surveyId) => {
+    const survey = surveys.find(s => s.id === surveyId);
+    if (!survey) {
+      alert('Survey not found');
+      return;
+    }
+
+    // Allow replacing existing duplicate
+
+    const message = hasDuplicatedSurvey 
+      ? `Are you sure you want to duplicate "${survey.title}"? This will replace the existing duplicate.`
+      : `Are you sure you want to duplicate "${survey.title}"? This will create a copy with draft status.`;
+
+    setConfirmationDialog({
+      isOpen: true,
+      title: "Duplicate Survey",
+      message,
+      type: "info",
+      onConfirm: async () => {
+        try {
+          // Remove existing duplicate if any
+          if (hasDuplicatedSurvey && duplicatedSurveyId) {
+            setSurveys(prev => prev.filter(s => s.id !== duplicatedSurveyId));
+            setFilteredSurveys(prev => prev.filter(s => s.id !== duplicatedSurveyId));
+          }
+
+          // In a real app, this would call the API
+          const duplicatedSurvey = {
+            ...survey,
+            id: Date.now(), // Generate new ID
+            title: `${survey.title} (Copy)`,
+            status: 'draft',
+            responses: 0,
+            completionRate: 0,
+            createdAt: new Date().toISOString(),
+            isDuplicated: true, // Mark as duplicated
+            originalId: surveyId, // Keep reference to original
+          };
+          
+          setSurveys(prev => [duplicatedSurvey, ...prev]);
+          setFilteredSurveys(prev => [duplicatedSurvey, ...prev]);
+          
+          // Mark that we have a duplicated survey
+          setHasDuplicatedSurvey(true);
+          setDuplicatedSurveyId(duplicatedSurvey.id);
+          
+          setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+          alert(hasDuplicatedSurvey ? 'Survey duplicated successfully! Previous duplicate was replaced.' : 'Survey duplicated successfully!');
+        } catch (error) {
+          console.error('Error duplicating survey:', error);
+          alert('Failed to duplicate survey. Please try again.');
+        }
+      }
+    });
   };
 
-  const handleArchive = (surveyId) => {
-    console.log("Archiving survey:", surveyId);
+  const handleArchive = async (surveyId) => {
+    const survey = surveys.find(s => s.id === surveyId);
+    if (!survey) {
+      alert('Survey not found');
+      return;
+    }
+
+    setConfirmationDialog({
+      isOpen: true,
+      title: "Archive Survey",
+      message: `Are you sure you want to archive "${survey.title}"? This action can be undone.`,
+      type: "warning",
+      onConfirm: async () => {
+        try {
+          // In a real app, this would call the API
+          setSurveys(prev => prev.filter(s => s.id !== surveyId));
+          setFilteredSurveys(prev => prev.filter(s => s.id !== surveyId));
+          setSelectedSurveys(prev => prev.filter(id => id !== surveyId));
+          
+          // If the archived survey was a duplicate, reset duplicate state
+          if (survey.isDuplicated) {
+            setHasDuplicatedSurvey(false);
+            setDuplicatedSurveyId(null);
+          }
+          
+          setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+          alert('Survey archived successfully!');
+        } catch (error) {
+          console.error('Error archiving survey:', error);
+          alert('Failed to archive survey. Please try again.');
+        }
+      }
+    });
   };
 
-  const handleExport = (surveyId) => {
-    console.log("Exporting survey:", surveyId);
+  const handleExport = async (surveyId) => {
+    try {
+      const survey = surveys.find(s => s.id === surveyId);
+      if (!survey) {
+        alert('Survey not found');
+        return;
+      }
+
+      // Create export data
+      const exportData = {
+        survey: survey,
+        exportedAt: new Date().toISOString(),
+        format: 'json'
+      };
+
+      // Create and download file
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `${survey.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_export.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      alert('Survey exported successfully!');
+    } catch (error) {
+      console.error('Error exporting survey:', error);
+      alert('Failed to export survey. Please try again.');
+    }
   };
 
-  const handleBulkDuplicate = () => {
-    console.log("Bulk duplicating surveys:", selectedSurveys);
+  const handleBulkDuplicate = async () => {
+    if (selectedSurveys.length === 0) return;
+    
+    setConfirmationDialog({
+      isOpen: true,
+      title: "Duplicate Surveys",
+      message: `Are you sure you want to duplicate ${selectedSurveys.length} survey(s)? This will create copies with draft status.`,
+      type: "info",
+      onConfirm: async () => {
+        try {
+          const surveysToDuplicate = surveys.filter(s => selectedSurveys.includes(s.id));
+          const duplicatedSurveys = surveysToDuplicate.map(survey => ({
+            ...survey,
+            id: Date.now() + Math.random(), // Generate unique ID
+            title: `${survey.title} (Copy)`,
+            status: 'draft',
+            responses: 0,
+            completionRate: 0,
+            createdAt: new Date().toISOString(),
+          }));
+          
+          setSurveys(prev => [...duplicatedSurveys, ...prev]);
+          setFilteredSurveys(prev => [...duplicatedSurveys, ...prev]);
+          setSelectedSurveys([]);
+          
+          setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+          alert(`${duplicatedSurveys.length} survey(s) duplicated successfully!`);
+        } catch (error) {
+          console.error('Error bulk duplicating surveys:', error);
+          alert('Failed to duplicate surveys. Please try again.');
+        }
+      }
+    });
   };
 
-  const handleBulkArchive = () => {
-    console.log("Bulk archiving surveys:", selectedSurveys);
+  const handleBulkArchive = async () => {
+    if (selectedSurveys.length === 0) return;
+    
+    setConfirmationDialog({
+      isOpen: true,
+      title: "Archive Surveys",
+      message: `Are you sure you want to archive ${selectedSurveys.length} survey(s)? This action can be undone.`,
+      type: "warning",
+      onConfirm: async () => {
+        try {
+          setSurveys(prev => prev.filter(s => !selectedSurveys.includes(s.id)));
+          setFilteredSurveys(prev => prev.filter(s => !selectedSurveys.includes(s.id)));
+          setSelectedSurveys([]);
+          
+          setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+          alert(`${selectedSurveys.length} survey(s) archived successfully!`);
+        } catch (error) {
+          console.error('Error bulk archiving surveys:', error);
+          alert('Failed to archive surveys. Please try again.');
+        }
+      }
+    });
   };
 
-  const handleBulkExport = () => {
-    console.log("Bulk exporting surveys:", selectedSurveys);
+  const handleBulkExport = async () => {
+    if (selectedSurveys.length === 0) return;
+    
+    try {
+      const surveysToExport = surveys.filter(s => selectedSurveys.includes(s.id));
+      
+      // Create export data
+      const exportData = {
+        surveys: surveysToExport,
+        exportedAt: new Date().toISOString(),
+        format: 'json',
+        count: surveysToExport.length
+      };
+
+      // Create and download file
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `surveys_bulk_export_${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      alert(`${surveysToExport.length} survey(s) exported successfully!`);
+    } catch (error) {
+      console.error('Error bulk exporting surveys:', error);
+      alert('Failed to export surveys. Please try again.');
+    }
   };
 
   const handleTestAPI = async () => {
@@ -349,6 +597,16 @@ const SurveyBuilderDashboard = () => {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center">
+                  <Icon name="AlertTriangle" size={20} className="text-yellow-600 mr-2" />
+                  <span className="text-yellow-800">{error}</span>
+                </div>
+              </div>
+            )}
+
             {/* Stats Overview */}
             <StatsOverview stats={stats} />
 
@@ -372,8 +630,18 @@ const SurveyBuilderDashboard = () => {
               onBulkExport={handleBulkExport}
             />
 
-            {/* Survey Grid/List */}
-            {filteredSurveys?.length === 0 ? (
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  Loading surveys...
+                </h3>
+                <p className="text-text-secondary">
+                  Please wait while we fetch your surveys
+                </p>
+              </div>
+            ) : filteredSurveys?.length === 0 ? (
               <div className="text-center py-12">
                 <Icon
                   name="FileText"
@@ -420,6 +688,7 @@ const SurveyBuilderDashboard = () => {
                       onGetPublicLink={handleGetPublicLink}
                       isSelected={selectedSurveys?.includes(survey?.id)}
                       onSelect={handleSelectSurvey}
+                      hasDuplicatedSurvey={hasDuplicatedSurvey}
                     />
                   ) : (
                     <SurveyListItem
@@ -431,6 +700,7 @@ const SurveyBuilderDashboard = () => {
                       onGetPublicLink={handleGetPublicLink}
                       isSelected={selectedSurveys?.includes(survey?.id)}
                       onSelect={handleSelectSurvey}
+                      hasDuplicatedSurvey={hasDuplicatedSurvey}
                     />
                   )
                 )}
@@ -439,6 +709,16 @@ const SurveyBuilderDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={confirmationDialog.isOpen}
+        onClose={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmationDialog.onConfirm}
+        title={confirmationDialog.title}
+        message={confirmationDialog.message}
+        type={confirmationDialog.type}
+      />
     </div>
   );
 };
